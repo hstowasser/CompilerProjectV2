@@ -1,6 +1,5 @@
 #include "include/Scanner.hpp"
 #include "include/Token.hpp"
-#include "include/FileReader.hpp"
 #include <iostream>
 #include <fstream>
 
@@ -8,21 +7,16 @@ using namespace std;
 
 int main()
 {
-        FileReader *reader = new FileReader("test.txt");
+        Scanner *scanner = new Scanner();
         
-
-        char c;
-        int num_lines=0;
-
-        while (!reader->eof()){
-                c = reader->getc();
-                if ( c == '\n'){
-                cout << " " << reader->getLineNum() << " ";
-                }
-                cout << c;
+        list<token_t> token_list = scanner->scanFile("test.txt");
+        
+        list<token_t>::iterator itr;
+        for ( itr = token_list.begin(); itr != token_list.end(); itr++){
+                print_token(*itr);
         }
 
-        free(reader);
+        free(scanner);
 
         return 0;
         }

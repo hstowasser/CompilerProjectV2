@@ -20,11 +20,16 @@ private:
         void skipBlockComment(FileReader *reader);
         // void skipWhiteSpace(FileReader *reader);
         char_class_t getCharClass(char c);
+        void parseIdentifier(FileReader *reader, token_t *token);
+        void parseDigit(FileReader *reader, token_t *token);
+        void parseSymbol(FileReader *reader, token_t *token);
+        void parseString(FileReader *reader, token_t *token);
+        token_type_e checkReservedWord(char* word);
 public:
         Scanner();
         ~Scanner();
 
-        std::list<token> scanFile(std::string filename);
+        std::list<token_t> scanFile(std::string filename);
 
         token_t scanToken(FileReader *reader);
 };
