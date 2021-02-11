@@ -28,6 +28,15 @@ char FileReader::peekc()
         return c;
 }
 
+char FileReader::peek2()
+{
+        char c;
+        fin_->get(c);
+        fin_->get(c);
+        fin_->seekg(-2, ios::cur);
+        return c;
+}
+
 char FileReader::getc()
 {
         char c;

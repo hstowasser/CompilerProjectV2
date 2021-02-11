@@ -16,7 +16,9 @@ class Scanner
 {
 private:
         void skipCommentsAndWhiteSpace(FileReader *reader);
-        void skipWhiteSpace(FileReader *reader);
+        void skipLineComment(FileReader *reader);
+        void skipBlockComment(FileReader *reader);
+        // void skipWhiteSpace(FileReader *reader);
         char_class_t getCharClass(char c);
 public:
         Scanner();

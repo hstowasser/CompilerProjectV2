@@ -23,50 +23,101 @@ char_class_t Scanner::getCharClass(char c)
         return cclass;
 }
 
-void Scanner::skipWhiteSpace(FileReader *reader)
+// void Scanner::skipWhiteSpace(FileReader *reader)
+// {
+//         char_class_t c_class;
+//         char c;
+//         do {
+//                 c = reader->peekc();
+//                 c_class == this->getCharClass(c);
+//                 if (c_class == CHR_WHITE_SPACE) {
+//                         reader->getc();
+//                 }
+//         } while (c_class == CHR_WHITE_SPACE && c != EOF);
+// }
+
+void Scanner::skipLineComment(FileReader *reader)
 {
-        char_class_t c_class;
         char c;
-        do {
-                c = reader->peekc();
-                c_class == this->getCharClass(c);
-                if (c_class == CHR_WHITE_SPACE) {
-                        reader->getc();
+        do{
+                c = reader->getc();
+        } while ( c != '\n' && c != EOF);
+}
+
+void Scanner::skipBlockComment(FileReader *reader)
+{
+        char c = 'x';
+        char last_c = 'x';
+        while ( !(last_c == '*' && c == '/') ){ // Stop when we see "*/"
+                if ( c == EOF ){
+                        // END of file reached
+                        break;
+                } else if (last_c == '/' && c == '*') {
+                        // If we find the start of a new block comment
+                        // recursively call the skip function;
+                        this->skipBlockComment(reader);
+                        c = reader->getc();
+                        last_c = 'x'; // Reset because we skipped forward
+                }else{
+                        last_c = c;
+                        c = reader->getc();
                 }
-        } while (c_class == CHR_WHITE_SPACE && c != EOF);
+        }
 }
 
 void Scanner::skipCommentsAndWhiteSpace(FileReader *reader)
 {
         char_class_t c_class = CHR_UNKNOWN;
-        char c = 'x'; // Initialize to not EOF
-
+        char c1;
+        char c2;
         do {
                 // Skip Whitespace
-                c = getc(fp);
-                c_class = get_char_class(c);
-                if (c == EOF) {
-                        error = SCAN_EOF;
-                } else if (c_class == CHR_WHITE_SPACE) {
-                        error = skip_whitespace(fp);
-                } else if (check_for_comment(fp, c)) {
-                        error = skip_comments(fp);
+                c1 = reader->peekc();
+                c2 = reader->peek2();
+                c_class = this->getCharClass(c1);
+                if (c_class == CHR_WHITE_SPACE) {
+                        // Skip white space
+                        reader->getc(); // Increment
+                } else if (c1 == '/' && c2 == '/') {
+                        // Skip Line Comment
+                        this->skipLineComment(reader);
+                } else if (c1 == '/' && c2 == '*') {
+                        // Skip Block Comment
+                        reader->getc(); // Remove start of block comment
+                        reader->getc();
+                        this->skipBlockComment(reader);
                 } else {
                         break;
                 }
-        } while (error == SCAN_OK);
-
-        // Roll back pointer to first char after comments/whitespaces
-        if (fseek(fp, -1, SEEK_CUR) != 0) {
-                printf("Error scanning \n");
-                error = SCAN_ERROR;
-        }
-        return error;
+        } while (1);
 }
 
 token_t Scanner::scanToken(FileReader *reader)
 {
+        char c;
+        char_class_t c_class;
+        token_t token;
+
         this->skipCommentsAndWhiteSpace(reader);
+
+        c = reader->peekc();
+        c_class = this->getCharClass(c);
+
+        if ( c == EOF ){
+                // Return EOF token
+                token.type = T_EOF;
+        } else if(c_class == CHR_LETTER){
+                // Parse Identifier
+
+        } else if (c_class == CHR_DIGIT){
+                // Parse Digit
+
+        } else if (c_class == CHR_SYMBOL){
+                // Parse Symbol
+
+        }
+
+        return token;
 }
 
 std::list<token> Scanner::scanFile(std::string filename)

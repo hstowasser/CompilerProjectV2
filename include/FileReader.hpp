@@ -14,6 +14,7 @@ public:
     ~FileReader();
 
     char peekc(); // Get next char without moving pointer
+    char peek2(); // Get char after next withoug moving pointer
     char getc(); // Get next char
     unsigned int getLineNum();
     bool eof();
