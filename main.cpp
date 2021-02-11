@@ -1,5 +1,6 @@
 #include "include/Scanner.hpp"
 #include "include/Token.hpp"
+#include "include/FileReader.hpp"
 #include <iostream>
 #include <fstream>
 
@@ -7,19 +8,21 @@ using namespace std;
 
 int main()
 {
-    ifstream fin;
-    fin.open("test.txt", ios::in);
+        FileReader *reader = new FileReader("test.txt");
+        
 
-    char c;
-    int num_lines=0;
+        char c;
+        int num_lines=0;
 
-    while (!fin.eof()){
-        fin.get(c);
-        cout << c;
-        if ( c == '\n'){
-            num_lines++;
+        while (!reader->eof()){
+                c = reader->getc();
+                if ( c == '\n'){
+                cout << " " << reader->getLineNum() << " ";
+                }
+                cout << c;
         }
-    }
 
-    return 0;
-}
+        free(reader);
+
+        return 0;
+        }

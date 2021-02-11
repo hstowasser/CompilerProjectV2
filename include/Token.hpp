@@ -65,6 +65,7 @@ typedef enum{
 } token_type_e;
 
 typedef struct token {
+        unsigned int line_num;
         token_type_e type;
         void* value; // consider changing to tree_node_t*
 } token_t;
