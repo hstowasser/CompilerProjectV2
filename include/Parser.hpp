@@ -5,7 +5,7 @@
 class Parser
 {
 private:
-        bool parseExpression(std::list<token_t>::iterator *itr); // TODO Implement, needs ArithOp
+        bool parseExpression(std::list<token_t>::iterator *itr);
         bool parseFactor(std::list<token_t>::iterator *itr);
         bool parseTerm(std::list<token_t>::iterator *itr);
         bool parseName(std::list<token_t>::iterator *itr);
