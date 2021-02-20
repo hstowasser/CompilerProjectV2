@@ -16,10 +16,65 @@ Parser::~Parser()
 bool Parser::parseExpression(std::list<token_t>::iterator *itr)
 {
         // arithOp > relation > term > factor
+        // TODO implement
         return false;
 }
 
-bool Parser::parseTerm(std::list<token_t>::iterator *itr) // TODO Check this logic
+bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr)
+{
+        bool ret = false;
+        // Check for identifier
+        if ((*itr)->type == T_IDENTIFIER){
+                debug_print_token(**itr);
+                (*itr)++; // Move to next token
+        }else {
+                ret = false; // TODO Handle error expected identifier
+                return ret;
+        }
+
+
+        if ((*itr)->type == T_SYM_LPAREN){
+                debug_print_token(**itr);
+                (*itr)++; // Move to next token
+                ret = this->parseArgumentList(itr);
+                if ( ret == false){
+                        return ret;
+                }
+
+                if ((*itr)->type == T_SYM_LPAREN){
+                        debug_print_token(**itr);
+                        (*itr)++; // Move to next token
+                        // ret = true; // ret should already be set to true by parseArg
+                }else{
+                        ret = false;
+                        // TODO Handle error Missing bracket
+                }
+        }
+        return ret;
+}
+
+bool Parser::parseArgumentList(std::list<token_t>::iterator *itr)
+{
+        bool ret = false;
+
+        // Parse expression
+        ret = this->parseExpression(itr);
+        if (ret == false){
+                return ret;
+        }
+
+        // if comma, keep parsing Argument List
+        if ((*itr)->type == T_SYM_COMMA){
+                debug_print_token(**itr);
+                (*itr)++; // Move to next token
+
+                //Parse ArgumentList
+                ret = this->parseArgumentList(itr);
+        }
+        return ret;
+}
+
+bool Parser::parseTerm(std::list<token_t>::iterator *itr)
 {
         bool ret = false;
         // std::list<token_t>::iterator itr_keep = *itr;
@@ -52,9 +107,17 @@ bool Parser::parseName(std::list<token_t>::iterator *itr)
 
         if ((*itr)->type == T_SYM_LBRACKET){
                 // parse expression
-                this->parseExpression(itr);
+                (*itr)++; // Move to next token
+                ret = this->parseExpression(itr);
+                if ( ret == false){
+                        return ret;
+                }
 
-                if ((*itr)->type != T_SYM_LBRACKET){
+                if ((*itr)->type == T_SYM_LBRACKET){
+                        debug_print_token(**itr);
+                        (*itr)++; // Move to next token
+                        // ret = true; // ret should already be set to true by parseExpression
+                }else{
                         ret = false;
                         // TODO Handle error Missing bracket
                 }
