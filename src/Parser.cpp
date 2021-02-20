@@ -1,7 +1,7 @@
 #include "Parser.hpp"
 #include "Token.hpp"
 
-#if 0
+#if 1
 #include "stdio.h"
 #define debug_print_call() printf("%s\n", __FUNCTION__)
 #else
@@ -50,6 +50,102 @@ bool Parser::parseProgram(std::list<token_t>::iterator *itr)
         }else{
                 return false; // TODO Handle error missing period
         }
+
+        return ret;
+}
+
+bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr)
+{
+        debug_print_call();
+        bool ret = false;
+
+        // check "type" tag
+        if ((*itr)->type == T_RW_TYPE){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; // not an error, just not a type
+        }
+
+        // check identifier
+        if ((*itr)->type == T_IDENTIFIER){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; // TODO handle error, missing identifier
+        }
+
+        // check "is" tag
+        if ((*itr)->type == T_RW_IS){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; // TODO handle error, missing "is"
+        }
+
+        // parse typemark
+        ret = this->parseTypeMark(itr);
+
+        return ret;
+}
+
+bool Parser::parseTypeMark(std::list<token_t>::iterator *itr)
+{
+        debug_print_call();
+        bool ret = false;
+
+        // check for integer or float or string or bool
+        // then get identifier
+        if (((*itr)->type == T_RW_INTEGER) ||
+            ((*itr)->type == T_RW_FLOAT) ||
+            ((*itr)->type == T_RW_STRING) ||
+            ((*itr)->type == T_RW_BOOL))
+        {
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+                ret = true;
+        }else if ((*itr)->type == T_IDENTIFIER){
+                // TODO check symbol table for type?
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+                ret = true;
+        }else if (((*itr)->type == T_RW_ENUM)){ // if enum
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+
+                // check for LPAREN
+                if ((*itr)->type == T_SYM_LBRACE){
+                        // Special case, don't move to next token till do/while
+                }else{
+                        return false; // TODO Handle error header missing parentheses
+                }
+
+                // loop through identifier
+                do{
+                        debug_print_token(**itr);
+                        this->inc_ptr(itr); // Move to next token
+                        
+                        // Check identifier
+                        if ((*itr)->type == T_IDENTIFIER){
+                                debug_print_token(**itr);
+                                this->inc_ptr(itr); // Move to next token
+                        }else{
+                                return false; // TODO Handle error header missing identifier
+                        }
+
+                }while ((*itr)->type == T_SYM_COMMA);
+
+                // check for RPAREN
+                if ((*itr)->type == T_SYM_RBRACE){
+                        debug_print_token(**itr);
+                        this->inc_ptr(itr); // Move to next token
+                        ret = true;
+                        // TODO update symobl table?
+                }else{
+                        return false; // TODO Handle error header missing parentheses
+                }
+        }
+        // else return false
 
         return ret;
 }
@@ -314,5 +410,6 @@ void Parser::parse(std::list<token_t> token_list)
         std::list<token_t>::iterator itr;
         this->itr_end = token_list.end();
         itr = token_list.begin();
-        this->parseProgramHeader(&itr);
+        bool ret = this->parseTypeDeclaration(&itr);
+        printf("%d \n", ret);
 }
