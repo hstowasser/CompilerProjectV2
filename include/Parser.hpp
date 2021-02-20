@@ -13,6 +13,10 @@ private:
         bool parseArgumentList(std::list<token_t>::iterator *itr);
         bool parseArithOp(std::list<token_t>::iterator *itr);
         bool parseRelation(std::list<token_t>::iterator *itr);
+
+        
+        void inc_ptr(std::list<token_t>::iterator *itr);
+        std::list<token_t>::iterator itr_end;
 public:
         Parser();
         ~Parser();
