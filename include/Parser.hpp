@@ -11,7 +11,13 @@ private:
         bool parseDeclaration(std::list<token_t>::iterator *itr); // TODO needs prodecure/variable/typeDeclaration 
         bool parseStatement(std::list<token_t>::iterator *itr); // TODO lots to do
 
-        bool parseProcedureDeclaration(std::list<token_t>::iterator *itr); //TODO needs TypeMark and ParameterList
+        bool parseProcedureHeader(std::list<token_t>::iterator *itr);
+        bool parseProcedureBody(std::list<token_t>::iterator *itr); // TODO needs parseDeclaration and parseStatement
+
+        bool parseParameterList(std::list<token_t>::iterator *itr);
+        bool parseParameter(std::list<token_t>::iterator *itr) {return this->parseVariableDeclaration(itr);}
+
+        bool parseProcedureDeclaration(std::list<token_t>::iterator *itr); //TODO needs ProcedureHeader ProcedureBody
         bool parseVariableDeclaration(std::list<token_t>::iterator *itr);
         bool parseTypeDeclaration(std::list<token_t>::iterator *itr);
 

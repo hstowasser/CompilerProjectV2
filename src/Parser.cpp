@@ -54,6 +54,94 @@ bool Parser::parseProgram(std::list<token_t>::iterator *itr)
         return ret;
 }
 
+bool Parser::parseProcedureDeclaration(std::list<token_t>::iterator *itr)
+{
+        debug_print_call();
+        bool ret = false;
+
+        // TODO Implement
+
+        // TODO parseProcedureHeader
+
+        // TODO parseProcedureBody
+
+        return ret;
+}
+
+bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr)
+{
+        debug_print_call();
+        bool ret = false;
+
+        // check for "procedure"
+        if ((*itr)->type == T_RW_PROCEDURE){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; // Not a procedure header
+        }
+
+        // check identifier
+        if ((*itr)->type == T_IDENTIFIER){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; // TODO Handle error missing identifier
+        }
+
+        // check colon
+        if ((*itr)->type == T_SYM_COLON){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; // TODO Handle error missing colon
+        }
+
+        // parseTypeMark
+        ret = this->parseTypeMark(itr);
+        if (!ret){
+                return false;
+        }
+
+        // check lparen, parseParameterList, check rparen
+        if ((*itr)->type == T_SYM_LPAREN){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+
+                ret = this->parseParameterList(itr);
+
+                if ((*itr)->type == T_SYM_RPAREN){
+                        debug_print_token(**itr);
+                        this->inc_ptr(itr); // Move to next token
+                } else {
+                        return false; // TODO Handle error missing parentheses
+                }
+        }else{
+                return false; // TODO Handle error missing parentheses
+        }
+
+        return ret;
+}
+
+bool Parser::parseParameterList(std::list<token_t>::iterator *itr)
+{
+        debug_print_call();
+        bool ret = false;
+
+        bool first = true;
+        do{
+                if (!first){
+                        // Skip comma
+                        debug_print_token(**itr);
+                        this->inc_ptr(itr); // Move to next token
+                }
+                ret = this->parseParameter(itr);
+                first = false;
+        } while(ret && (*itr)->type == T_SYM_COMMA);
+
+        return ret;
+}
+
 bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr)
 {
         debug_print_call();
@@ -470,6 +558,6 @@ void Parser::parse(std::list<token_t> token_list)
         std::list<token_t>::iterator itr;
         this->itr_end = token_list.end();
         itr = token_list.begin();
-        bool ret = this->parseVariableDeclaration(&itr);
+        bool ret = this->parseProcedureHeader(&itr);
         printf("%d \n", ret);
 }
