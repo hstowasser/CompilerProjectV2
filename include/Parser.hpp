@@ -5,6 +5,9 @@
 class Parser
 {
 private:
+        bool parseProgram(std::list<token_t>::iterator *itr); // Incomplete TODO complete... Duh
+        bool parseProgramHeader(std::list<token_t>::iterator *itr);
+
         bool parseExpression(std::list<token_t>::iterator *itr);
         bool parseFactor(std::list<token_t>::iterator *itr);
         bool parseTerm(std::list<token_t>::iterator *itr);

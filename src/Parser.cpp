@@ -3,7 +3,7 @@
 
 #if 0
 #include "stdio.h"
-#define debug_print_call() printf("%s\n", __FUNCTION__);
+#define debug_print_call() printf("%s\n", __FUNCTION__)
 #else
 #define debug_print_call()
 #endif
@@ -33,9 +33,61 @@ void Parser::inc_ptr(std::list<token_t>::iterator *itr)
         }
 }
 
+bool Parser::parseProgram(std::list<token_t>::iterator *itr)
+{
+        debug_print_call();
+        bool ret = false;
+        // Parse program header
+        ret = this->parseProgramHeader(itr);
+
+        // Parse program body
+        // ret = this->parseProgramBody(itr); // TODO Implement programBody
+
+        // check for period
+        if ((*itr)->type == T_SYM_PERIOD){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; // TODO Handle error missing period
+        }
+
+        return ret;
+}
+
+bool Parser::parseProgramHeader(std::list<token_t>::iterator *itr)
+{
+        debug_print_call();
+        bool ret = false;
+        // check for program tag
+        if ((*itr)->type == T_RW_PROGRAM){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; // TODO Handle error expected "program"
+        }
+
+        // parse identifier
+        if ((*itr)->type == T_IDENTIFIER){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; // TODO Handle error header missing identifier
+        }
+
+        // check for "is"
+        if ((*itr)->type == T_RW_IS){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+                ret = true;
+        }else{
+                return false; // TODO Handle error expected "is"
+        }
+        return ret;
+}
+
 bool Parser::parseExpression(std::list<token_t>::iterator *itr)
 {
-        debug_print_call()
+        debug_print_call();
         bool ret = false;
         // check for not
         if ((*itr)->type == T_OP_LOGI_NOT){
@@ -59,7 +111,7 @@ bool Parser::parseExpression(std::list<token_t>::iterator *itr)
 
 bool Parser::parseArithOp(std::list<token_t>::iterator *itr)
 {
-        debug_print_call()
+        debug_print_call();
         bool ret = false;
         ret = this->parseRelation(itr);
         if (ret){
@@ -77,7 +129,7 @@ bool Parser::parseArithOp(std::list<token_t>::iterator *itr)
 
 bool Parser::parseRelation(std::list<token_t>::iterator *itr)
 {
-        debug_print_call()
+        debug_print_call();
         bool ret = false;
         ret = this->parseTerm(itr);
         if (ret){
@@ -99,7 +151,7 @@ bool Parser::parseRelation(std::list<token_t>::iterator *itr)
 
 bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr)
 {
-        debug_print_call()
+        debug_print_call();
         bool ret = false;
         // Check for identifier
         if ((*itr)->type == T_IDENTIFIER){
@@ -133,7 +185,7 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr)
 
 bool Parser::parseArgumentList(std::list<token_t>::iterator *itr)
 {
-        debug_print_call()
+        debug_print_call();
         bool ret = false;
 
         // Parse expression
@@ -155,7 +207,7 @@ bool Parser::parseArgumentList(std::list<token_t>::iterator *itr)
 
 bool Parser::parseTerm(std::list<token_t>::iterator *itr)
 {
-        debug_print_call()
+        debug_print_call();
         bool ret = false;
         ret = this->parseFactor(itr);
         if (ret){
@@ -173,7 +225,7 @@ bool Parser::parseTerm(std::list<token_t>::iterator *itr)
 
 bool Parser::parseName(std::list<token_t>::iterator *itr)
 {
-        debug_print_call()
+        debug_print_call();
         bool ret = false;
         // Check for identifier
         if ((*itr)->type == T_IDENTIFIER){
@@ -207,7 +259,7 @@ bool Parser::parseName(std::list<token_t>::iterator *itr)
 
 bool Parser::parseFactor(std::list<token_t>::iterator *itr)
 {
-        debug_print_call()
+        debug_print_call();
         bool ret = false;
         // Check for L_Paren
         if ((*itr)->type == T_SYM_LPAREN){
@@ -262,5 +314,5 @@ void Parser::parse(std::list<token_t> token_list)
         std::list<token_t>::iterator itr;
         this->itr_end = token_list.end();
         itr = token_list.begin();
-        this->parseExpression(&itr);
+        this->parseProgramHeader(&itr);
 }
