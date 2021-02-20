@@ -10,12 +10,12 @@ int main()
 {
         Scanner *scanner = new Scanner();
         Parser *parser = new Parser();
-        
+
         list<token_t> token_list = scanner->scanFile("test.txt");
         
         list<token_t>::iterator itr;
         for ( itr = token_list.begin(); itr != token_list.end(); itr++){
-                print_token(*itr);
+                //print_token(*itr);
         }
 
         free(scanner);

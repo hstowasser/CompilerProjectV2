@@ -377,15 +377,15 @@ token_t Scanner::scanToken(FileReader *reader)
 std::list<token_t> Scanner::scanFile(std::string filename)
 {
         FileReader *reader;
-
+        token_t token;
         std::list<token_t> token_list;
 
-        if (reader == NULL) {
+        if (reader != NULL) {
                 free(reader);
         }
         reader = new FileReader(filename);
 
-        token_t token;
+
         do {
                 token = this->scanToken(reader);
                 token_list.push_back(token);
