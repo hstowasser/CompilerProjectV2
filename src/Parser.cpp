@@ -20,6 +20,44 @@ bool Parser::parseExpression(std::list<token_t>::iterator *itr)
         return false;
 }
 
+bool Parser::parseArithOp(std::list<token_t>::iterator *itr)
+{
+        bool ret = false;
+        ret = this->parseRelation(itr);
+        if (ret){
+                if (((*itr)->type == T_OP_ARITH_MINUS) ||
+                    ((*itr)->type == T_OP_ARITH_PLUS))
+                {
+                        debug_print_token(**itr);
+                        // Then it's an ArithOp?
+                        (*itr)++; // Move to next token
+                        ret = this->parseArithOp(itr);
+                }
+        }
+        return ret;
+}
+
+bool Parser::parseRelation(std::list<token_t>::iterator *itr)
+{
+        bool ret = false;
+        ret = this->parseTerm(itr);
+        if (ret){
+                if (((*itr)->type == T_OP_REL_GREATER) ||
+                    ((*itr)->type == T_OP_REL_LESS) ||
+                    ((*itr)->type == T_OP_REL_GREATER_EQUAL) ||
+                    ((*itr)->type == T_OP_REL_LESS_EQUAL) ||
+                    ((*itr)->type == T_OP_REL_EQUAL) ||
+                    ((*itr)->type == T_OP_REL_NOT_EQUAL))
+                {
+                        debug_print_token(**itr);
+                        // Then it's a relation?
+                        (*itr)++; // Move to next token
+                        ret = this->parseRelation(itr);
+                }
+        }
+        return ret;
+}
+
 bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr)
 {
         bool ret = false;
@@ -77,7 +115,6 @@ bool Parser::parseArgumentList(std::list<token_t>::iterator *itr)
 bool Parser::parseTerm(std::list<token_t>::iterator *itr)
 {
         bool ret = false;
-        // std::list<token_t>::iterator itr_keep = *itr;
         ret = this->parseFactor(itr);
         if (ret){
                 if (((*itr)->type == T_OP_TERM_DIVIDE) ||
