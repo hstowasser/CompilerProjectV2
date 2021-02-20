@@ -54,6 +54,66 @@ bool Parser::parseProgram(std::list<token_t>::iterator *itr)
         return ret;
 }
 
+bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr)
+{
+        debug_print_call();
+        bool ret = false;
+
+        // check for "variable"
+        if ((*itr)->type == T_RW_VARIABLE){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; // Not a variable declaration
+        }
+
+        // check for identifier
+        if ((*itr)->type == T_IDENTIFIER){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; // TODO Handle error missing identifier
+        }
+
+        // check for colon
+        if ((*itr)->type == T_SYM_COLON){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; // TODO Handle error missing colon
+        }
+
+        // parse for type_mark
+        ret = this->parseTypeMark(itr);
+        if (!ret){
+                return false;
+        }
+
+        // check for open bracket
+        if ((*itr)->type == T_SYM_LBRACKET){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+
+                // parse bound
+                if ((*itr)->type == T_CONST_INTEGER){
+                        debug_print_token(**itr);
+                        this->inc_ptr(itr); // Move to next token
+                }else{
+                        return false; // TODO Handle error missing bound
+                }
+
+                // check for close bracket
+                if ((*itr)->type == T_SYM_RBRACKET){
+                        debug_print_token(**itr);
+                        this->inc_ptr(itr); // Move to next token
+                }else{
+                        return false; // TODO Handle error missing bracket
+                }
+        }
+
+        return ret;
+}
+
 bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr)
 {
         debug_print_call();
@@ -410,6 +470,6 @@ void Parser::parse(std::list<token_t> token_list)
         std::list<token_t>::iterator itr;
         this->itr_end = token_list.end();
         itr = token_list.begin();
-        bool ret = this->parseTypeDeclaration(&itr);
+        bool ret = this->parseVariableDeclaration(&itr);
         printf("%d \n", ret);
 }

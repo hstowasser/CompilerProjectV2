@@ -12,7 +12,7 @@ private:
         bool parseStatement(std::list<token_t>::iterator *itr); // TODO lots to do
 
         bool parseProcedureDeclaration(std::list<token_t>::iterator *itr); //TODO needs TypeMark and ParameterList
-        bool parseVariableDeclaration(std::list<token_t>::iterator *itr); //TODO needs TypeMark and Bound
+        bool parseVariableDeclaration(std::list<token_t>::iterator *itr);
         bool parseTypeDeclaration(std::list<token_t>::iterator *itr);
 
         bool parseTypeMark(std::list<token_t>::iterator *itr);
