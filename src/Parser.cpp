@@ -41,7 +41,7 @@ bool Parser::parseProgram(std::list<token_t>::iterator *itr)
         ret = this->parseProgramHeader(itr);
 
         // Parse program body
-        // ret = this->parseProgramBody(itr); // TODO Implement programBody
+        ret = this->parseProgramBody(itr);
 
         // check for period
         if ((*itr)->type == T_SYM_PERIOD){
@@ -49,6 +49,60 @@ bool Parser::parseProgram(std::list<token_t>::iterator *itr)
                 this->inc_ptr(itr); // Move to next token
         }else{
                 return false; // TODO Handle error missing period
+        }
+
+        return ret;
+}
+
+bool Parser::parseProgramBody(std::list<token_t>::iterator *itr)
+{
+        debug_print_call();
+        bool ret = false;
+
+        // parse declarations
+        while ( this->parseDeclaration(itr) ){
+                // check for ;
+                if ((*itr)->type == T_SYM_SEMICOLON){
+                        debug_print_token(**itr);
+                        this->inc_ptr(itr); // Move to next token
+                }else{
+                        return false; // TODO Handle error missing semicolon
+                }
+        }
+
+        // check for "begin"
+        if ((*itr)->type == T_RW_BEGIN){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; // TODO Handle error missing begin
+        }
+
+        // parse statements
+        while ( this->parseStatement(itr) ){
+                // check for ;
+                if ((*itr)->type == T_SYM_SEMICOLON){
+                        debug_print_token(**itr);
+                        this->inc_ptr(itr); // Move to next token
+                }else{
+                        return false; // TODO Handle error missing semicolon
+                }
+        }
+
+        // check for "end" "program"
+        if ((*itr)->type == T_RW_END){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+
+                if ((*itr)->type == T_RW_PROGRAM){
+                        debug_print_token(**itr);
+                        this->inc_ptr(itr); // Move to next token
+                        ret = true; // TODO Check that this is correct
+                }else{
+                        return false; // TODO Handle error missing "program"
+                }
+        }else{
+                return false; // TODO Handle error missing "end"
         }
 
         return ret;
@@ -725,6 +779,7 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr)
 {
         debug_print_call();
         bool ret = false;
+
         // Check for identifier
         if ((*itr)->type == T_IDENTIFIER){
                 debug_print_token(**itr);
@@ -738,19 +793,29 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr)
         if ((*itr)->type == T_SYM_LPAREN){
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
-                ret = this->parseArgumentList(itr);
-                if ( ret == false){
-                        return ret;
-                }
-
-                if ((*itr)->type == T_SYM_LPAREN){
+                
+                if ((*itr)->type == T_SYM_RPAREN){
+                        // Procedure call has no arguments
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
-                        // ret = true; // ret should already be set to true by parseArg
+                        ret = true;
                 }else{
-                        ret = false;
-                        // TODO Handle error Missing bracket
+                        ret = this->parseArgumentList(itr);
+                        if ( ret == false){
+                                return ret;
+                        }
+
+                        if ((*itr)->type == T_SYM_RPAREN){
+                                debug_print_token(**itr);
+                                this->inc_ptr(itr); // Move to next token
+                                // ret = true; // ret should already be set to true by parseArg
+                        }else{
+                                ret = false;
+                                // TODO Handle error Missing bracket
+                        }
                 }
+        } else {
+                
         }
         return ret;
 }
@@ -874,10 +939,21 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr)
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
                 ret = true;
-        }else if (!ret){
-                ret = this->parseName(itr);
-        }else{
-                ret = this->parseProcedureCall(itr);
+        }else {
+                std::list<token_t>::iterator temp_itr = *itr;
+
+                // Peek ahead to check if it is a procedure call
+                this->inc_ptr(itr); // Move to next token
+                if ((*itr)->type != T_SYM_LPAREN){
+                        // Move pointer back to original position
+                        *itr = temp_itr;
+                        // Not a procedure call
+                        ret = this->parseName(itr);
+                }else{
+                        // Move pointer back to original position
+                        *itr = temp_itr;
+                        ret = this->parseProcedureCall(itr);
+                }
         }
         return ret;
 }
@@ -887,6 +963,6 @@ void Parser::parse(std::list<token_t> token_list)
         std::list<token_t>::iterator itr;
         this->itr_end = token_list.end();
         itr = token_list.begin();
-        bool ret = this->parseDeclaration(&itr);
+        bool ret = this->parseProgram(&itr);
         printf("%d \n", ret);
 }
