@@ -8,16 +8,23 @@ private:
         bool parseProgram(std::list<token_t>::iterator *itr); // TODO Incomplete needs parseProgramBody
         bool parseProgramHeader(std::list<token_t>::iterator *itr);
         bool parseProgramBody(std::list<token_t>::iterator *itr); // TODO needs parseDelcaration and parseStatement
-        bool parseDeclaration(std::list<token_t>::iterator *itr); // TODO needs prodecure/variable/typeDeclaration 
-        bool parseStatement(std::list<token_t>::iterator *itr); // TODO lots to do
+        bool parseDeclaration(std::list<token_t>::iterator *itr);
+        bool parseStatement(std::list<token_t>::iterator *itr);
+
+        bool parseAssignmentStatement(std::list<token_t>::iterator *itr);
+        bool parseIfStatement(std::list<token_t>::iterator *itr);
+        bool parseLoopStatement(std::list<token_t>::iterator *itr);
+        bool parseReturnStatement(std::list<token_t>::iterator *itr);
+
+        bool parseDestination(std::list<token_t>::iterator *itr);
 
         bool parseProcedureHeader(std::list<token_t>::iterator *itr);
-        bool parseProcedureBody(std::list<token_t>::iterator *itr); // TODO needs parseDeclaration and parseStatement
+        bool parseProcedureBody(std::list<token_t>::iterator *itr);
 
         bool parseParameterList(std::list<token_t>::iterator *itr);
         bool parseParameter(std::list<token_t>::iterator *itr) {return this->parseVariableDeclaration(itr);}
 
-        bool parseProcedureDeclaration(std::list<token_t>::iterator *itr); //TODO needs ProcedureHeader ProcedureBody
+        bool parseProcedureDeclaration(std::list<token_t>::iterator *itr);
         bool parseVariableDeclaration(std::list<token_t>::iterator *itr);
         bool parseTypeDeclaration(std::list<token_t>::iterator *itr);
 

@@ -54,16 +54,344 @@ bool Parser::parseProgram(std::list<token_t>::iterator *itr)
         return ret;
 }
 
+bool Parser::parseDestination(std::list<token_t>::iterator *itr)
+{
+        debug_print_call();
+        bool ret = false;
+
+        // check identifier
+        if ((*itr)->type == T_IDENTIFIER){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+                ret = true;
+        }else{
+                return false; // Not a valid destination
+        }
+
+
+        // if open bracket
+        if ((*itr)->type == T_SYM_LBRACKET){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+
+                // then parse expression
+                ret = this->parseExpression(itr);
+                if ( !ret ){
+                        return false;
+                }
+
+                // check close bracket
+                if ((*itr)->type == T_SYM_RBRACKET){
+                        debug_print_token(**itr);
+                        this->inc_ptr(itr); // Move to next token
+                }else{
+                        return false; // TODO Handle error missing rbracket
+                }
+        }
+        
+
+        return ret;
+}
+
+bool Parser::parseAssignmentStatement(std::list<token_t>::iterator *itr)
+{
+        debug_print_call();
+        bool ret = false;
+
+        ret = this->parseDestination(itr);
+
+        // check for assignment op :=
+        if ((*itr)->type == T_OP_ASIGN_EQUALS){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; //TODO Handle error expected assignment op
+        }
+
+        // parse expression
+        ret = this->parseExpression(itr);
+
+        return ret; 
+}
+
+bool Parser::parseIfStatement(std::list<token_t>::iterator *itr)
+{
+        debug_print_call();
+        bool ret = false;
+
+        if ((*itr)->type == T_RW_IF){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; //Not an if statement
+        }
+
+        if ((*itr)->type == T_SYM_LPAREN){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; //TODO Handle error expected (
+        }
+
+        ret = this->parseExpression(itr);
+        if (!ret){
+                return false;
+        }
+
+        if ((*itr)->type == T_SYM_RPAREN){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; //TODO Handle error expected )
+        }
+
+        if ((*itr)->type == T_RW_THEN){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; //TODO Handle error expected "then"
+        }
+
+        // parse statements
+        while ( this->parseStatement(itr) ){
+                // check for ;
+                if ((*itr)->type == T_SYM_SEMICOLON){
+                        debug_print_token(**itr);
+                        this->inc_ptr(itr); // Move to next token
+                }else{
+                        return false; // TODO Handle error missing semicolon
+                }
+        }
+
+        // if "else"
+        if ((*itr)->type == T_RW_ELSE){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+
+                // parse statements
+                while ( this->parseStatement(itr) ){
+                        // check for ;
+                        if ((*itr)->type == T_SYM_SEMICOLON){
+                                debug_print_token(**itr);
+                                this->inc_ptr(itr); // Move to next token
+                        }else{
+                                return false; // TODO Handle error missing semicolon
+                        }
+                }
+        }
+
+        if ((*itr)->type == T_RW_END){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+
+                if ((*itr)->type == T_RW_IF){
+                        debug_print_token(**itr);
+                        this->inc_ptr(itr); // Move to next token
+                }else{
+                        return false; // TODO Handle error missing "if"
+                }
+        }else{
+                return false; // TODO Handle error missing "end"
+        }
+
+        return ret;
+}
+
+bool Parser::parseLoopStatement(std::list<token_t>::iterator *itr)
+{
+        debug_print_call();
+        bool ret = false;
+
+        if ((*itr)->type == T_RW_FOR){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; //Not a for statement
+        }
+
+        if ((*itr)->type == T_SYM_LPAREN){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; //TODO Handle error expected (
+        }
+
+        ret = this->parseAssignmentStatement(itr);
+        if (!ret){
+                return false;
+        }
+
+        if ((*itr)->type == T_SYM_SEMICOLON){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; // TODO Handle error missing semicolon
+        }
+
+        ret = this->parseExpression(itr);
+        if (!ret){
+                return false;
+        }
+
+        if ((*itr)->type == T_SYM_RPAREN){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; //TODO Handle error expected )
+        }
+
+        // parse statements
+        while ( this->parseStatement(itr) ){
+                // check for ;
+                if ((*itr)->type == T_SYM_SEMICOLON){
+                        debug_print_token(**itr);
+                        this->inc_ptr(itr); // Move to next token
+                }else{
+                        return false; // TODO Handle error missing semicolon
+                }
+        }
+
+
+        if ((*itr)->type == T_RW_END){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+
+                if ((*itr)->type == T_RW_FOR){
+                        debug_print_token(**itr);
+                        this->inc_ptr(itr); // Move to next token
+                }else{
+                        return false; // TODO Handle error missing "for"
+                }
+        }else{
+                return false; // TODO Handle error missing "end"
+        }
+
+        return ret;
+}
+
+bool Parser::parseReturnStatement(std::list<token_t>::iterator *itr)
+{
+        debug_print_call();
+        bool ret = false;
+
+        if ((*itr)->type == T_RW_RETURN){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; // Not a return statement
+        }
+
+        ret = this->parseExpression(itr);
+
+        return ret;
+}
+
+bool Parser::parseStatement(std::list<token_t>::iterator *itr)
+{
+        debug_print_call();
+        bool ret = false;
+
+        if ( ret = this->parseAssignmentStatement(itr) ){
+
+        }else if (ret = this->parseIfStatement(itr)){
+
+        }else if (ret = this->parseLoopStatement(itr)){
+
+        }else if (ret = this->parseReturnStatement(itr)){
+
+        } // else no valid statement
+
+        return ret;
+}
+
+bool Parser::parseDeclaration(std::list<token_t>::iterator *itr)
+{
+        debug_print_call();
+        bool ret = false;
+
+        if ((*itr)->type == T_RW_GLOBAL){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }
+
+        if ( ret = this->parseProcedureDeclaration(itr) ){
+                // Procedure Declaration
+        }else if (ret = this->parseVariableDeclaration(itr)){
+                // Variable Declaration
+        }else if (ret = this->parseTypeDeclaration(itr)){
+                // Type Declaration
+        } // else no valid declaration
+
+        return ret;
+}
+
+bool Parser::parseProcedureBody(std::list<token_t>::iterator *itr)
+{
+        debug_print_call();
+        bool ret = false;
+
+        // parse declarations
+        while ( this->parseDeclaration(itr) ){
+                // check for ;
+                if ((*itr)->type == T_SYM_SEMICOLON){
+                        debug_print_token(**itr);
+                        this->inc_ptr(itr); // Move to next token
+                }else{
+                        return false; // TODO Handle error missing semicolon
+                }
+        }
+
+        // check for "begin"
+        if ((*itr)->type == T_RW_BEGIN){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+        }else{
+                return false; // TODO Handle error missing begin
+        }
+
+        // parse statements
+        while ( this->parseStatement(itr) ){
+                // check for ;
+                if ((*itr)->type == T_SYM_SEMICOLON){
+                        debug_print_token(**itr);
+                        this->inc_ptr(itr); // Move to next token
+                }else{
+                        return false; // TODO Handle error missing semicolon
+                }
+        }
+
+        // check for "end" "procedure"
+        if ((*itr)->type == T_RW_END){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+
+                if ((*itr)->type == T_RW_PROCEDURE){
+                        debug_print_token(**itr);
+                        this->inc_ptr(itr); // Move to next token
+                        ret = true; // TODO Check that this is correct
+                }else{
+                        return false; // TODO Handle error missing "procedure"
+                }
+        }else{
+                return false; // TODO Handle error missing "end"
+        }
+
+
+        return ret;
+}
+
 bool Parser::parseProcedureDeclaration(std::list<token_t>::iterator *itr)
 {
         debug_print_call();
         bool ret = false;
 
-        // TODO Implement
+        // parseProcedureHeader
+        ret = this->parseProcedureHeader(itr);
+        if (!ret){
+                return false;
+        }
 
-        // TODO parseProcedureHeader
-
-        // TODO parseProcedureBody
+        ret = this->parseProcedureBody(itr);
 
         return ret;
 }
@@ -483,13 +811,14 @@ bool Parser::parseName(std::list<token_t>::iterator *itr)
 
         if ((*itr)->type == T_SYM_LBRACKET){
                 // parse expression
+                debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
                 ret = this->parseExpression(itr);
                 if ( ret == false){
                         return ret;
                 }
 
-                if ((*itr)->type == T_SYM_LBRACKET){
+                if ((*itr)->type == T_SYM_RBRACKET){
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
                         // ret = true; // ret should already be set to true by parseExpression
@@ -530,14 +859,14 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr)
                 this->inc_ptr(itr); // Move to next token
                 ret = true;
         }else if ((*itr)->type == T_OP_ARITH_MINUS){
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
                 if ((*itr)->type == T_CONST_INTEGER ||
                     (*itr)->type == T_CONST_FLOAT){
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
                         ret = true;
                 } else if (!ret){
-                        debug_print_token(**itr);
-                        this->inc_ptr(itr); // Move to next token
                         ret = this->parseName(itr);
                 }
         }else if ((*itr)->type == T_CONST_INTEGER ||
@@ -558,6 +887,6 @@ void Parser::parse(std::list<token_t> token_list)
         std::list<token_t>::iterator itr;
         this->itr_end = token_list.end();
         itr = token_list.begin();
-        bool ret = this->parseProcedureHeader(&itr);
+        bool ret = this->parseDeclaration(&itr);
         printf("%d \n", ret);
 }
