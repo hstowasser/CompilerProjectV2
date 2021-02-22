@@ -32,8 +32,18 @@ char FileReader::peek2()
 {
         char c;
         fin_->get(c);
+        if (c == EOF){
+                fin_->seekg(-1, ios::end);
+                return c;
+        }
         fin_->get(c);
-        fin_->seekg(-2, ios::cur);
+        if (c == EOF){
+                fin_->seekg(-2, ios::end);
+                return c;
+        }else{
+                fin_->seekg(-2, ios::cur);
+        }
+        
         return c;
 }
 
