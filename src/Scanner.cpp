@@ -201,7 +201,7 @@ void Scanner::parseDigit(FileReader *reader, token_t *token)
 void Scanner::parseSymbol(FileReader *reader, token_t *token)
 {
         char c = reader->peekc();
-        char next_c = reader->peekc();
+        char next_c = reader->peek2();
 
         bool is_two_char_operator = false;
 
