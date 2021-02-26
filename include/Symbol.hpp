@@ -1,23 +1,21 @@
 #pragma once
-#include "Scope.hpp"
+// #include "Scope.hpp"
 
-class Scope; // Work-around for circular dependencies
+//class Scope; // Work-around for circular dependencies
 
-class Symbol{
-public:
-        //SymbolEntry();
+// TODO make this a struct to simplify things
 
-        enum SymbolType{
-                ST_UNKNOWN,
-                ST_VARIABLE,
-                ST_PROCEDURE
-        };
-private:
-        enum SymbolType _symboltype;
-        union _value
-        {
-                int variable_type;
-                Scope *local_scope;
-        };
+// class Symbol{
+// public:
+//         //SymbolEntry();
+
         
-};
+// private:
+//         enum SymbolType _symboltype;
+//         union _value
+//         {
+//                 int variable_type;
+//                 //Scope *local_scope; // TODO Think about this, is it overcomplicated?
+//         };
+        
+// };

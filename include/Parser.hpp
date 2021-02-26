@@ -1,6 +1,9 @@
 #pragma once
 #include "Token.hpp"
+#include "Symbol.hpp"
+#include "Scope.hpp"
 #include <list>
+#include <map>
 
 class Parser
 {
@@ -42,6 +45,8 @@ private:
         
         void inc_ptr(std::list<token_t>::iterator *itr);
         std::list<token_t>::iterator itr_end;
+
+
 public:
         Parser();
         ~Parser();
