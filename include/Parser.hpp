@@ -1,6 +1,5 @@
 #pragma once
 #include "Token.hpp"
-#include "Symbol.hpp"
 #include "Scope.hpp"
 #include <list>
 #include <map>
@@ -21,15 +20,15 @@ private:
 
         bool parseDestination(std::list<token_t>::iterator *itr);
 
-        bool parseProcedureHeader(std::list<token_t>::iterator *itr);
+        bool parseProcedureHeader(std::list<token_t>::iterator *itr, bool global);
         bool parseProcedureBody(std::list<token_t>::iterator *itr);
 
         bool parseParameterList(std::list<token_t>::iterator *itr);
-        bool parseParameter(std::list<token_t>::iterator *itr) {return this->parseVariableDeclaration(itr);}
+        bool parseParameter(std::list<token_t>::iterator *itr) {return this->parseVariableDeclaration(itr, false);}
 
-        bool parseProcedureDeclaration(std::list<token_t>::iterator *itr);
-        bool parseVariableDeclaration(std::list<token_t>::iterator *itr);
-        bool parseTypeDeclaration(std::list<token_t>::iterator *itr);
+        bool parseProcedureDeclaration(std::list<token_t>::iterator *itr, bool global);
+        bool parseVariableDeclaration(std::list<token_t>::iterator *itr, bool global);
+        bool parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global);
 
         bool parseTypeMark(std::list<token_t>::iterator *itr);
 
@@ -46,9 +45,10 @@ private:
         void inc_ptr(std::list<token_t>::iterator *itr);
         std::list<token_t>::iterator itr_end;
 
+        Scope* scope;
 
 public:
-        Parser();
+        Parser(Scope* scope);
         ~Parser();
         void parse(std::list<token_t> token_list);
 };

@@ -16,8 +16,9 @@
 
 
 
-Parser::Parser(/* args */)
+Parser::Parser(Scope* scope)
 {
+        this->scope = scope;
 }
 
 Parser::~Parser()
@@ -362,17 +363,19 @@ bool Parser::parseDeclaration(std::list<token_t>::iterator *itr)
 {
         debug_print_call();
         bool ret = false;
+        bool global = false;
 
         if ((*itr)->type == T_RW_GLOBAL){
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
+                global = true;
         }
 
-        if ((ret = this->parseProcedureDeclaration(itr))){
+        if ((ret = this->parseProcedureDeclaration(itr, global))){
                 // Procedure Declaration
-        }else if ((ret = this->parseVariableDeclaration(itr))){
+        }else if ((ret = this->parseVariableDeclaration(itr, global))){
                 // Variable Declaration
-        }else if ((ret = this->parseTypeDeclaration(itr))){
+        }else if ((ret = this->parseTypeDeclaration(itr, global))){
                 // Type Declaration
         } // else no valid declaration
 
@@ -434,13 +437,13 @@ bool Parser::parseProcedureBody(std::list<token_t>::iterator *itr)
         return ret;
 }
 
-bool Parser::parseProcedureDeclaration(std::list<token_t>::iterator *itr)
+bool Parser::parseProcedureDeclaration(std::list<token_t>::iterator *itr, bool global)
 {
         debug_print_call();
         bool ret = false;
 
         // parseProcedureHeader
-        ret = this->parseProcedureHeader(itr);
+        ret = this->parseProcedureHeader(itr, global);
         if (!ret){
                 return false;
         }
@@ -450,7 +453,7 @@ bool Parser::parseProcedureDeclaration(std::list<token_t>::iterator *itr)
         return ret;
 }
 
-bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr)
+bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global)
 {
         debug_print_call();
         bool ret = false;
@@ -465,6 +468,19 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr)
 
         // check identifier
         if ((*itr)->type == T_IDENTIFIER){
+                
+                symbol_t symbol;
+                symbol.type = ST_PROCEDURE;
+                if (global){
+                        this->scope->AddGlobalSymbol(*(*itr)->getStringValue(), symbol);
+                        this->scope->PushScope(*(*itr)->getStringValue());
+                }else{
+                        // To allow for recursive calls add procedure symbol to both current and next scope
+                        this->scope->AddSymbol(*(*itr)->getStringValue(), symbol);
+                        this->scope->PushScope(*(*itr)->getStringValue());
+                        this->scope->AddSymbol(*(*itr)->getStringValue(), symbol);
+                }
+
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
@@ -524,7 +540,7 @@ bool Parser::parseParameterList(std::list<token_t>::iterator *itr)
         return ret;
 }
 
-bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr)
+bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool global)
 {
         debug_print_call();
         bool ret = false;
@@ -539,6 +555,13 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr)
 
         // check for identifier
         if ((*itr)->type == T_IDENTIFIER){
+                symbol_t symbol;
+                symbol.type = ST_VARIABLE;
+                if (global){
+                        this->scope->AddGlobalSymbol(*(*itr)->getStringValue(), symbol);
+                }else{
+                        this->scope->AddSymbol(*(*itr)->getStringValue(), symbol);
+                }
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
@@ -584,7 +607,7 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr)
         return ret;
 }
 
-bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr)
+bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global)
 {
         debug_print_call();
         bool ret = false;
@@ -599,6 +622,13 @@ bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr)
 
         // check identifier
         if ((*itr)->type == T_IDENTIFIER){
+                symbol_t symbol;
+                symbol.type = ST_TYPE;
+                if (global){
+                        this->scope->AddGlobalSymbol(*(*itr)->getStringValue(), symbol);
+                }else{
+                        this->scope->AddSymbol(*(*itr)->getStringValue(), symbol);
+                }
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
@@ -694,6 +724,9 @@ bool Parser::parseProgramHeader(std::list<token_t>::iterator *itr)
 
         // parse identifier
         if ((*itr)->type == T_IDENTIFIER){
+                // Create scope for program
+                this->scope->PushScope(*(*itr)->getStringValue());
+
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{

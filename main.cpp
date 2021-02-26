@@ -18,8 +18,9 @@ void destroy_list(list<token_t>* token_list)
 
 int main()
 {
+        Scope *scope = new Scope();
         Scanner *scanner = new Scanner();
-        Parser *parser = new Parser();
+        Parser *parser = new Parser(scope);
         list<token_t> token_list;
 
         scanner->scanFile("test.txt", &token_list);
@@ -31,6 +32,8 @@ int main()
         }
 
         parser->parse(token_list);
+
+        scope->PrintScope();
 
         destroy_list(&token_list);
 

@@ -6,7 +6,8 @@
 typedef enum {
         ST_UNKNOWN,
         ST_VARIABLE,
-        ST_PROCEDURE
+        ST_PROCEDURE,
+        ST_TYPE
 } SymbolType_e;
 
 typedef struct {
@@ -38,5 +39,7 @@ public:
 
         void PushScope(std::string);
         void PopScope();
+
+        void PrintScope(); //For Debugging
 
 };

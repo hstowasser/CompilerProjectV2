@@ -1,5 +1,5 @@
 #include "Scope.hpp"
-
+#include <iostream>
 
 Scope::Scope()
 {
@@ -32,4 +32,32 @@ void Scope::AddSymbol(std::string name, symbol_t symbol)
 void Scope::AddGlobalSymbol(std::string name, symbol_t symbol)
 {
     this->global_symbol_table[name] = symbol;
+}
+
+void Scope::PrintScope()
+{
+    // Print Global Scope
+    std:: cout << "Global Scope:" << std::endl;
+    symbol_table_t::iterator it;
+    for (it = this->global_symbol_table.begin(); it != this->global_symbol_table.end(); it++)
+    {
+        std::cout << "\t" << it->first
+            << std::endl;
+    }
+
+    // Print Local Scopes
+    std::map<std::string, symbol_table_t>::iterator itm;
+    for (itm = this->symbol_tables.begin(); itm != this->symbol_tables.end(); itm++)
+    {
+        std::cout << "Local Scope: " << itm->first << std::endl;
+
+        symbol_table_t::iterator it;
+        for (it = itm->second.begin(); it != itm->second.end(); it++)
+        {
+            std::cout << "\t" << it->first
+                << std::endl;
+        }
+    }
+
+
 }
