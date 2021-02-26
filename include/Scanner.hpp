@@ -29,8 +29,8 @@ public:
         Scanner();
         ~Scanner();
 
-        std::list<token_t> scanFile(std::string filename);
+        void scanFile(std::string filename, std::list<token_t>* token_list);
 
-        token_t scanToken(FileReader *reader);
+        token_t* scanToken(FileReader *reader);
 };
 

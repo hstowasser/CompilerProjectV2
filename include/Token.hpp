@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 #define MAX_IDENTIFIER_LENGTH 256
 #define MAX_DIGIT_LENGTH 256
@@ -64,10 +65,34 @@ typedef enum{
         T_RW_FALSE,
 } token_type_e;
 
-typedef struct token {
+class token_t{
+public:
+        token_t();
+        ~token_t();
         unsigned int line_num;
         token_type_e type;
-        void* value; // consider changing to tree_node_t*
-} token_t;
+
+        void setValue(std::string value);
+        void setValue(int value);
+        void setValue(float value);
+
+        void destroy();
+
+        std::string* getStringValue();
+        int getIntValue();
+        float getFloatValue();
+private:
+        enum value_type_e {
+                NONE,
+                STRING,
+                INT,
+                FLOAT
+        };
+        enum value_type_e value_type;
+
+        void* _value;
+        void* tag; // Used to prevent double free
+
+};
 
 void print_token(token_t token);

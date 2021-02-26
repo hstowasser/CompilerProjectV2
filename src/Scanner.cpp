@@ -24,19 +24,6 @@ char_class_t Scanner::getCharClass(char c)
         return cclass;
 }
 
-// void Scanner::skipWhiteSpace(FileReader *reader)
-// {
-//         char_class_t c_class;
-//         char c;
-//         do {
-//                 c = reader->peekc();
-//                 c_class == this->getCharClass(c);
-//                 if (c_class == CHR_WHITE_SPACE) {
-//                         reader->getc();
-//                 }
-//         } while (c_class == CHR_WHITE_SPACE && c != EOF);
-// }
-
 void Scanner::skipLineComment(FileReader *reader)
 {
         char c;
@@ -151,7 +138,8 @@ void Scanner::parseIdentifier(FileReader *reader, token_t *token)
         token->type = this->checkReservedWord(buffer);
 
         if (token->type == T_IDENTIFIER){
-                // TODO Add buffer to symbol table.
+                // Add buffer to symbol table.
+                token->setValue(std::string(buffer, i+1));
 
         }
 
@@ -188,13 +176,11 @@ void Scanner::parseDigit(FileReader *reader, token_t *token)
         if (is_float){
                 float temp = strtof(buffer, &endp);
                 token->type = T_CONST_FLOAT;
-                // TODO Add float to symbol tree?
-                // token->value = tree_add( &scanner_inst->symbol_tree, &temp, sizeof(float));
+                token->setValue(temp);
         } else {
                 int temp = strtol(buffer, &endp, 10);
                 token->type = T_CONST_INTEGER;
-                // TODO Add int to symbol tree?
-                // token->value = tree_add( &scanner_inst->symbol_tree, &temp, sizeof(int));
+                token->setValue(temp);
         }
 }
 
@@ -322,6 +308,7 @@ void Scanner::parseString(FileReader *reader, token_t *token)
 
         reader->getc(); // This should be the first quote, so we'll skip it
         c = reader->getc();
+        str.append(1, c);
         escape = c == '\\';
         while ( c != '"' && escape == false && c != EOF){
                 // Loop through till we find an unescaped quotation mark
@@ -335,22 +322,18 @@ void Scanner::parseString(FileReader *reader, token_t *token)
         if ( c == EOF ){
                 // TODO Handle: Unexpected EOF while parsing string
         } else {
-                // TODO Add string to symbol table
-                // char* buffer = malloc(string_len);
-                // fgets(buffer, string_len, fp);
-                // token->value = tree_add( &scanner_inst->symbol_tree, buffer, string_len);
-                // free(buffer);
-                // c = getc(fp);
+                // Add string to symbol table
+                token->setValue(str);
         }
 
         return;
 }
 
-token_t Scanner::scanToken(FileReader *reader)
+token_t* Scanner::scanToken(FileReader *reader)
 {
         char c;
         char_class_t c_class;
-        token_t token;
+        token_t* token = new token_t();
 
         this->skipCommentsAndWhiteSpace(reader);
 
@@ -359,38 +342,33 @@ token_t Scanner::scanToken(FileReader *reader)
 
         if ( c == EOF ){
                 // Return EOF token
-                token.type = T_EOF;
+                token->type = T_EOF;
         } else if(c_class == CHR_LETTER){
                 // Parse Identifier
-                this->parseIdentifier(reader, &token);
+                this->parseIdentifier(reader, token);
         } else if (c_class == CHR_DIGIT){
                 // Parse Digit
-                this->parseDigit(reader, &token);
+                this->parseDigit(reader, token);
         } else if (c_class == CHR_SYMBOL){
                 // Parse Symbol
-                this->parseSymbol(reader, &token);
+                this->parseSymbol(reader, token);
         }
 
         return token;
 }
 
-std::list<token_t> Scanner::scanFile(std::string filename)
+void Scanner::scanFile(std::string filename, std::list<token_t>* token_list)
 {
         FileReader *reader;
-        token_t token;
-        std::list<token_t> token_list;
+        token_t* token;
 
-        if (reader != NULL) {
-                free(reader);
-        }
         reader = new FileReader(filename);
 
 
         do {
                 token = this->scanToken(reader);
-                token_list.push_back(token);
-        } while (token.type != T_EOF);
+                token_list->push_back(*token);
+        } while (token->type != T_EOF);
 
-        free(reader);
-        return token_list;
+        delete reader;
 }

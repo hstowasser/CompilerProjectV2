@@ -112,12 +112,96 @@ static const char * token_type_to_string(token_type_e token_type)
 void print_token(token_t token)
 {
         printf("Type: %s ", token_type_to_string(token.type));
-        // if ( token.type == T_IDENTIFIER || token.type == T_CONST_STRING){
-        //         printf("value: %s", (char*)((tree_node_t*)token.value)->data);
-        // }else if ( token.type == T_CONST_INTEGER) {
-        //         printf("integer value: %d", *(int*)((tree_node_t*)token.value)->data);
-        // }else if ( token.type == T_CONST_FLOAT) {
-        //         printf("float value: %f", *(float*)((tree_node_t*)token.value)->data);
-        // }
+        if ( token.type == T_IDENTIFIER || token.type == T_CONST_STRING){
+                printf("value: %s", token.getStringValue()->c_str());
+        }else if ( token.type == T_CONST_INTEGER) {
+                printf("integer value: %d", token.getIntValue());
+        }else if ( token.type == T_CONST_FLOAT) {
+                printf("float value: %f", token.getFloatValue());
+        }
         printf("\n");
+}
+
+token_t::token_t()
+{
+        this->line_num = 0;
+        this->type = T_UNKNOWN;
+        this->_value = NULL;
+        this->tag = NULL;
+        this->value_type = NONE;
+}
+
+token_t::~token_t()
+{
+
+}
+
+void token_t::destroy()
+{
+        if ( this->value_type == INT || this->value_type == FLOAT){
+                free(this->_value);
+        }else if ( this->value_type == STRING){
+                delete (std::string*)(this->_value);
+        }
+}
+
+void token_t::setValue(std::string value)
+{
+        if ( this->_value == NULL){
+                this->_value = (void*) new std::string(value);
+                this->value_type = STRING;
+                this->tag = (void*)this;
+        }
+}
+
+void token_t::setValue(int value)
+{
+        if ( this->_value == NULL){
+                this->_value = malloc(sizeof(int));
+                if ( this->_value != NULL){
+                        *((int*)this->_value) = value;
+                        this->value_type = INT;
+                        this->tag = (void*)this;
+                }
+        }
+}
+
+void token_t::setValue(float value)
+{
+        if ( this->_value == NULL){
+                this->_value = malloc(sizeof(float));
+                if ( this->_value != NULL){
+                        *((float*)this->_value) = value;
+                        this->value_type = FLOAT;
+                        this->tag = (void*)this;
+                }
+        }
+}
+
+std::string* token_t::getStringValue()
+{
+        if (this->value_type == STRING){
+                return (std::string*)this->_value;
+        }else{
+                //return ""; // Error
+                return NULL;
+        }
+}
+
+int token_t::getIntValue()
+{
+        if (this->value_type == INT){
+                return *((int*)this->_value);
+        }else{
+                return 0; // Error
+        }
+}
+
+float token_t::getFloatValue()
+{
+        if (this->value_type == FLOAT){
+                return *((float*)this->_value);
+        }else{
+                return 0; // Error
+        }
 }

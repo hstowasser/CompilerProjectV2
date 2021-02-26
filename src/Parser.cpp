@@ -345,13 +345,13 @@ bool Parser::parseStatement(std::list<token_t>::iterator *itr)
         debug_print_call();
         bool ret = false;
 
-        if ( ret = this->parseAssignmentStatement(itr) ){
+        if ((ret = this->parseAssignmentStatement(itr))){
 
-        }else if (ret = this->parseIfStatement(itr)){
+        }else if ((ret = this->parseIfStatement(itr))){
 
-        }else if (ret = this->parseLoopStatement(itr)){
+        }else if ((ret = this->parseLoopStatement(itr))){
 
-        }else if (ret = this->parseReturnStatement(itr)){
+        }else if ((ret = this->parseReturnStatement(itr))){
 
         } // else no valid statement
 
@@ -368,11 +368,11 @@ bool Parser::parseDeclaration(std::list<token_t>::iterator *itr)
                 this->inc_ptr(itr); // Move to next token
         }
 
-        if ( ret = this->parseProcedureDeclaration(itr) ){
+        if ((ret = this->parseProcedureDeclaration(itr))){
                 // Procedure Declaration
-        }else if (ret = this->parseVariableDeclaration(itr)){
+        }else if ((ret = this->parseVariableDeclaration(itr))){
                 // Variable Declaration
-        }else if (ret = this->parseTypeDeclaration(itr)){
+        }else if ((ret = this->parseTypeDeclaration(itr))){
                 // Type Declaration
         } // else no valid declaration
 
