@@ -759,7 +759,6 @@ bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global /*= fa
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
                         ret = true;
-                        // TODO update symobl table?
                 }else{
                         error_printf( *itr, "Expected closing brace after \"ENUM\" declaration \n");
                         return false;
@@ -881,7 +880,7 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr)
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else {
-                error_printf( *itr, "Expected procedure name before \"(\" \n");
+                // Should never reach here
                 ret = false;
                 return ret;
         }
@@ -912,7 +911,7 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr)
                         }
                 }
         } else {
-                
+                // Should never reach here
         }
         return ret;
 }
@@ -967,7 +966,7 @@ bool Parser::parseName(std::list<token_t>::iterator *itr)
                 this->inc_ptr(itr); // Move to next token
                 ret = true;
         }else {
-                ret = false; // TODO Handle error
+                ret = false; // Should never reach here
                 return ret;
         }
 
@@ -1004,9 +1003,9 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr)
                 if ((*itr)->type == T_SYM_RPAREN){
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
-                        // this->parseExpression(itr); // Why is this here?
                 }else{
-                        ret = false; // TODO Handle Missing parentheses
+                        error_printf( *itr, "Expected closing parentheses \n");
+                        ret = false;
                 }
         }else if ((*itr)->type == T_RW_TRUE){
                 debug_print_token(**itr);
@@ -1036,7 +1035,7 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr)
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
                 ret = true;
-        }else {
+        }else if ((*itr)->type == T_IDENTIFIER){
                 std::list<token_t>::iterator temp_itr = *itr;
 
                 // Peek ahead to check if it is a procedure call
@@ -1051,6 +1050,9 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr)
                         *itr = temp_itr;
                         ret = this->parseProcedureCall(itr);
                 }
+        }else{
+                error_printf( *itr, "Invalid Factor \n");
+                ret = false;
         }
         return ret;
 }
