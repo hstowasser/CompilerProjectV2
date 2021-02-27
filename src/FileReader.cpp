@@ -8,6 +8,7 @@ FileReader::FileReader(std::string filename)
 {
         fin_ = new std::ifstream();
         fin_->open(filename, std::ios::in);
+        linenum_ = 1;
 }
 
 FileReader::~FileReader()

@@ -334,6 +334,8 @@ token_t* Scanner::scanToken(FileReader *reader)
 
         this->skipCommentsAndWhiteSpace(reader);
 
+        token->line_num = reader->getLineNum();
+
         c = reader->peekc();
         c_class = this->getCharClass(c);
 
