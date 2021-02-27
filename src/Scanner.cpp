@@ -299,23 +299,20 @@ void Scanner::parseSymbol(FileReader *reader, token_t *token)
 
 void Scanner::parseString(FileReader *reader, token_t *token)
 {
-        char c;
-        bool escape = false; // This holds whether or not the last char was a backslash
-        int string_len = 1;
+        char c = ' '; // Initialize to not / or "
         std::string str;
 
         token->type = T_CONST_STRING;
 
         reader->getc(); // This should be the first quote, so we'll skip it
         c = reader->getc();
-        str.append(1, c);
-        escape = c == '\\';
-        while ( c != '"' && escape == false && c != EOF){
-                // Loop through till we find an unescaped quotation mark
-                c = reader->getc();
+        while( c != '"' && c != EOF){
+                if (c == '\\'){
+                        c = reader->getc(); // Skip it
+                        // Don't add escape \ to string
+                }
                 str.append(1, c);
-                escape = c == '\\';
-                string_len++;
+                c = reader->getc();
         }
 
         
