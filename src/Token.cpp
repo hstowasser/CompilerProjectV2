@@ -111,7 +111,7 @@ static const char * token_type_to_string(token_type_e token_type)
 
 void print_token(token_t token)
 {
-        printf("Type: %s ", token_type_to_string(token.type));
+        printf("Type: %s   Line: %d   ", token_type_to_string(token.type), token.line_num);
         if ( token.type == T_IDENTIFIER || token.type == T_CONST_STRING){
                 printf("value: %s", token.getStringValue()->c_str());
         }else if ( token.type == T_CONST_INTEGER) {

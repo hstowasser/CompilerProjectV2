@@ -1,20 +1,22 @@
 #include "Parser.hpp"
 #include "Token.hpp"
 
-#if 1
-#include "stdio.h"
+#if 0
+#include <stdio.h>
 #define debug_print_call() printf("%s\n", __FUNCTION__)
 #else
 #define debug_print_call()
 #endif
 
-#if 1
+#if 0
 #define debug_print_token(itr) print_token(itr)
 #else
 #define debug_print_token(itr)
 #endif
 
+#include <stdarg.h>
 
+#define error_printf(token, fmt, ...) printf("ERROR: Line %d - " fmt, (token)->line_num, ##__VA_ARGS__)
 
 Parser::Parser(Scope* scope)
 {
@@ -30,7 +32,7 @@ void Parser::inc_ptr(std::list<token_t>::iterator *itr)
         if (*itr != this->itr_end) {
                 (*itr)++;
         }else{
-                // TODO Ahhhhh???
+                error_printf( *itr, "Unknown error,  \n");
         }
 }
 
@@ -49,7 +51,8 @@ bool Parser::parseProgram(std::list<token_t>::iterator *itr)
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
-                return false; // TODO Handle error missing period
+                error_printf( *itr, "Expected Period \n");
+                return false;
         }
 
         return ret;
@@ -67,7 +70,8 @@ bool Parser::parseProgramBody(std::list<token_t>::iterator *itr)
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
                 }else{
-                        return false; // TODO Handle error missing semicolon
+                        error_printf( *itr, "Expected Semicolon \n");
+                        return false;
                 }
         }
 
@@ -76,7 +80,8 @@ bool Parser::parseProgramBody(std::list<token_t>::iterator *itr)
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
-                return false; // TODO Handle error missing begin
+                error_printf( *itr, "Expected \"begin\" in program body \n");
+                return false;
         }
 
         // parse statements
@@ -86,7 +91,8 @@ bool Parser::parseProgramBody(std::list<token_t>::iterator *itr)
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
                 }else{
-                        return false; // TODO Handle error missing semicolon
+                        error_printf( *itr, "Expected Semicolon \n");
+                        return false;
                 }
         }
 
@@ -100,10 +106,12 @@ bool Parser::parseProgramBody(std::list<token_t>::iterator *itr)
                         this->inc_ptr(itr); // Move to next token
                         ret = true; // TODO Check that this is correct
                 }else{
-                        return false; // TODO Handle error missing "program"
+                        error_printf( *itr, "Expected \"end program\" \n");
+                        return false;
                 }
         }else{
-                return false; // TODO Handle error missing "end"
+                error_printf( *itr, "Expected \"end program\" \n");
+                return false;
         }
 
         return ret;
@@ -140,7 +148,8 @@ bool Parser::parseDestination(std::list<token_t>::iterator *itr)
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
                 }else{
-                        return false; // TODO Handle error missing rbracket
+                        error_printf( *itr, "Expected closing bracket \n");
+                        return false;
                 }
         }
         
@@ -154,13 +163,17 @@ bool Parser::parseAssignmentStatement(std::list<token_t>::iterator *itr)
         bool ret = false;
 
         ret = this->parseDestination(itr);
+        if (!ret){
+                return false; // Not an assignment statement
+        }
 
         // check for assignment op :=
         if ((*itr)->type == T_OP_ASIGN_EQUALS){
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
-                return false; //TODO Handle error expected assignment op
+                error_printf( *itr, "Expected \":=\" \n");
+                return false;
         }
 
         // parse expression
@@ -185,7 +198,8 @@ bool Parser::parseIfStatement(std::list<token_t>::iterator *itr)
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
-                return false; //TODO Handle error expected (
+                error_printf( *itr, "Expected \"(\" after IF \n");
+                return false;
         }
 
         ret = this->parseExpression(itr);
@@ -197,14 +211,16 @@ bool Parser::parseIfStatement(std::list<token_t>::iterator *itr)
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
-                return false; //TODO Handle error expected )
+                error_printf( *itr, "Expected \")\" before THEN \n");
+                return false;
         }
 
         if ((*itr)->type == T_RW_THEN){
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
-                return false; //TODO Handle error expected "then"
+                error_printf( *itr, "Expected THEN \n");
+                return false;
         }
 
         // parse statements
@@ -214,7 +230,8 @@ bool Parser::parseIfStatement(std::list<token_t>::iterator *itr)
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
                 }else{
-                        return false; // TODO Handle error missing semicolon
+                        error_printf( *itr, "Expected semicolon \n");
+                        return false;
                 }
         }
 
@@ -230,7 +247,8 @@ bool Parser::parseIfStatement(std::list<token_t>::iterator *itr)
                                 debug_print_token(**itr);
                                 this->inc_ptr(itr); // Move to next token
                         }else{
-                                return false; // TODO Handle error missing semicolon
+                                error_printf( *itr, "Expected semicolon \n");
+                                return false;
                         }
                 }
         }
@@ -243,10 +261,12 @@ bool Parser::parseIfStatement(std::list<token_t>::iterator *itr)
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
                 }else{
-                        return false; // TODO Handle error missing "if"
+                        error_printf( *itr, "Expected \"END IF\" \n");
+                        return false;
                 }
         }else{
-                return false; // TODO Handle error missing "end"
+                error_printf( *itr, "Expected \"END IF\" \n");
+                return false;
         }
 
         return ret;
@@ -268,7 +288,8 @@ bool Parser::parseLoopStatement(std::list<token_t>::iterator *itr)
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
-                return false; //TODO Handle error expected (
+                error_printf( *itr, "Expected \"(\" after FOR \n");
+                return false;
         }
 
         ret = this->parseAssignmentStatement(itr);
@@ -280,7 +301,8 @@ bool Parser::parseLoopStatement(std::list<token_t>::iterator *itr)
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
-                return false; // TODO Handle error missing semicolon
+                error_printf( *itr, "Expected semicolon \n");
+                return false;
         }
 
         ret = this->parseExpression(itr);
@@ -292,7 +314,8 @@ bool Parser::parseLoopStatement(std::list<token_t>::iterator *itr)
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
-                return false; //TODO Handle error expected )
+                error_printf( *itr, "Expected \")\" \n");
+                return false;
         }
 
         // parse statements
@@ -302,7 +325,8 @@ bool Parser::parseLoopStatement(std::list<token_t>::iterator *itr)
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
                 }else{
-                        return false; // TODO Handle error missing semicolon
+                        error_printf( *itr, "Expected semicolon \n");
+                        return false;
                 }
         }
 
@@ -315,10 +339,12 @@ bool Parser::parseLoopStatement(std::list<token_t>::iterator *itr)
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
                 }else{
-                        return false; // TODO Handle error missing "for"
+                        error_printf( *itr, "Expected \"END FOR\" \n");
+                        return false;
                 }
         }else{
-                return false; // TODO Handle error missing "end"
+                error_printf( *itr, "Expected \"END FOR\" \n");
+                return false;
         }
 
         return ret;
@@ -394,7 +420,8 @@ bool Parser::parseProcedureBody(std::list<token_t>::iterator *itr)
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
                 }else{
-                        return false; // TODO Handle error missing semicolon
+                        error_printf( *itr, "Expected semicolon \n");
+                        return false;
                 }
         }
 
@@ -403,7 +430,8 @@ bool Parser::parseProcedureBody(std::list<token_t>::iterator *itr)
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
-                return false; // TODO Handle error missing begin
+                error_printf( *itr, "Expected \"BEGIN\" in procedure body \n");
+                return false;
         }
 
         // parse statements
@@ -413,7 +441,8 @@ bool Parser::parseProcedureBody(std::list<token_t>::iterator *itr)
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
                 }else{
-                        return false; // TODO Handle error missing semicolon
+                        error_printf( *itr, "Expected semicolon \n");
+                        return false;
                 }
         }
 
@@ -427,10 +456,12 @@ bool Parser::parseProcedureBody(std::list<token_t>::iterator *itr)
                         this->inc_ptr(itr); // Move to next token
                         ret = true; // TODO Check that this is correct
                 }else{
-                        return false; // TODO Handle error missing "procedure"
+                        error_printf( *itr, "Expected \"END PROCEDURE\" \n");
+                        return false;
                 }
         }else{
-                return false; // TODO Handle error missing "end"
+                error_printf( *itr, "Expected \"END PROCEDURE\" \n");
+                return false;
         }
 
 
@@ -484,7 +515,8 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
-                return false; // TODO Handle error missing identifier
+                error_printf( *itr, "Expected identifier after \"PROCEDURE\" \n");
+                return false;
         }
 
         // check colon
@@ -492,7 +524,8 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
-                return false; // TODO Handle error missing colon
+                error_printf( *itr, "Expected colon \n");
+                return false;
         }
 
         // parseTypeMark
@@ -512,10 +545,12 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
                 } else {
-                        return false; // TODO Handle error missing parentheses
+                        error_printf( *itr, "Expected closing parentheses after procedure parameters \n");
+                        return false;
                 }
         }else{
-                return false; // TODO Handle error missing parentheses
+                error_printf( *itr, "Expected parentheses after procedure identifier \n");
+                return false;
         }
 
         return ret;
@@ -565,7 +600,8 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
-                return false; // TODO Handle error missing identifier
+                error_printf( *itr, "Expected identifier after \"VARIABLE\" \n");
+                return false;
         }
 
         // check for colon
@@ -573,7 +609,8 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
-                return false; // TODO Handle error missing colon
+                error_printf( *itr, "Expected colon in variable declaration \n");
+                return false;
         }
 
         // parse for type_mark
@@ -592,7 +629,8 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
                 }else{
-                        return false; // TODO Handle error missing bound
+                        error_printf( *itr, "Expected bound inside of [] \n");
+                        return false;
                 }
 
                 // check for close bracket
@@ -600,7 +638,8 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
                 }else{
-                        return false; // TODO Handle error missing bracket
+                        error_printf( *itr, "Expected closing bracket \n");
+                        return false;
                 }
         }
 
@@ -632,7 +671,8 @@ bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
-                return false; // TODO handle error, missing identifier
+                error_printf( *itr, "Expected identifier after  \"TYPE\" \n");
+                return false;
         }
 
         // check "is" tag
@@ -640,7 +680,8 @@ bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
-                return false; // TODO handle error, missing "is"
+                error_printf( *itr, "Expected \"IS\" after type identifier \n");
+                return false;
         }
 
         // parse typemark
@@ -681,7 +722,8 @@ bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global /*= fa
                 if ((*itr)->type == T_SYM_LBRACE){
                         // Special case, don't move to next token till do/while
                 }else{
-                        return false; // TODO Handle error header missing parentheses
+                        error_printf( *itr, "Expected opening brace after \"enum\" \n");
+                        return false;
                 }
 
                 // loop through enum identifiers
@@ -702,10 +744,11 @@ bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global /*= fa
                                 }else{
                                         this->scope->AddSymbol(*(*itr)->getStringValue(), symbol);
                                 }
-                                debug_print_token(**itr);         
+                                debug_print_token(**itr);
                                 this->inc_ptr(itr); // Move to next token                       
                         }else{
-                                return false; // TODO Handle error header missing identifier
+                                error_printf( *itr, "Expected identifier in \"ENUM\" declaration \n");
+                                return false;
                         }
                         e_index++;
 
@@ -718,7 +761,8 @@ bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global /*= fa
                         ret = true;
                         // TODO update symobl table?
                 }else{
-                        return false; // TODO Handle error header missing parentheses
+                        error_printf( *itr, "Expected closing brace after \"ENUM\" declaration \n");
+                        return false;
                 }
         }
         // else return false
@@ -735,7 +779,8 @@ bool Parser::parseProgramHeader(std::list<token_t>::iterator *itr)
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
-                return false; // TODO Handle error expected "program"
+                error_printf( *itr, "Code must start with \"PROGRAM\" definition\n");
+                return false;
         }
 
         // parse identifier
@@ -746,7 +791,8 @@ bool Parser::parseProgramHeader(std::list<token_t>::iterator *itr)
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
-                return false; // TODO Handle error header missing identifier
+                error_printf( *itr, "Expected identifier after \"PROGRAM\" \n");
+                return false;
         }
 
         // check for "is"
@@ -755,7 +801,8 @@ bool Parser::parseProgramHeader(std::list<token_t>::iterator *itr)
                 this->inc_ptr(itr); // Move to next token
                 ret = true;
         }else{
-                return false; // TODO Handle error expected "is"
+                error_printf( *itr, "Expected \"IS\" after program identifier \n");
+                return false;
         }
         return ret;
 }
@@ -834,7 +881,8 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr)
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else {
-                ret = false; // TODO Handle error expected identifier
+                error_printf( *itr, "Expected procedure name before \"(\" \n");
+                ret = false;
                 return ret;
         }
 
@@ -859,8 +907,8 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr)
                                 this->inc_ptr(itr); // Move to next token
                                 // ret = true; // ret should already be set to true by parseArg
                         }else{
+                                error_printf( *itr, "Expected closing parentheses after argument list \n");
                                 ret = false;
-                                // TODO Handle error Missing bracket
                         }
                 }
         } else {
@@ -938,7 +986,7 @@ bool Parser::parseName(std::list<token_t>::iterator *itr)
                         // ret = true; // ret should already be set to true by parseExpression
                 }else{
                         ret = false;
-                        // TODO Handle error Missing bracket
+                        error_printf( *itr, "Expected closing bracket \n");
                 }
         }
         return ret;
