@@ -8,7 +8,7 @@ dep = $(obj:.o=.d)  # one dependency file for each source
 INCLUDES = -I $(shell pwd)/include
 
 cc := g++
-CFLAGS = -MMD -g $(INCLUDES) -lstdc++   # option to generate a .d file during compilation
+CFLAGS = -MMD -g $(INCLUDES) -lstdc++ -Wall  # option to generate a .d file during compilation
 LDFLAGS = -lm -g -lstdc++
 COBJFLAGS := $(CFLAGS) -c
 
