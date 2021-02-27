@@ -23,27 +23,23 @@ unsigned int FileReader::getLineNum()
 
 char FileReader::peekc()
 {
-        char c;
-        c = fin_->peek();
-        return c;
+        if (fin_->eof()){
+                return EOF;
+        } else {
+                return fin_->peek();
+        }
 }
 
 char FileReader::peek2()
 {
         char c;
-        fin_->get(c);
-        if (c == EOF){
-                fin_->seekg(-1, ios::end);
-                return c;
-        }
-        fin_->get(c);
-        if (c == EOF){
-                fin_->seekg(-2, ios::end);
-                return c;
+        if (fin_->eof()){
+                c = EOF;
         }else{
-                fin_->seekg(-2, ios::cur);
+                fin_->get(c);
+                c = this->peekc();
+                fin_->seekg(-1, ios::cur);
         }
-        
         return c;
 }
 
