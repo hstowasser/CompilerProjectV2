@@ -50,11 +50,15 @@ char FileReader::peek2()
 char FileReader::getc()
 {
         char c;
-        fin_->get(c);
-        if (c == '\n'){
-                linenum_++;
+        if (fin_->eof()){
+                return EOF;
+        }else{
+                fin_->get(c);
+                if (c == '\n'){
+                        linenum_++;
+                }
+                return c;
         }
-        return c;
 }
 
 bool FileReader::eof()
