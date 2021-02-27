@@ -30,7 +30,7 @@ private:
         bool parseVariableDeclaration(std::list<token_t>::iterator *itr, bool global);
         bool parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global);
 
-        bool parseTypeMark(std::list<token_t>::iterator *itr);
+        bool parseTypeMark(std::list<token_t>::iterator *itr, bool global = false);
 
         bool parseExpression(std::list<token_t>::iterator *itr);
         bool parseFactor(std::list<token_t>::iterator *itr);

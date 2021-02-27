@@ -7,14 +7,16 @@ typedef enum {
         ST_UNKNOWN,
         ST_VARIABLE,
         ST_PROCEDURE,
+        ST_ENUM_CONST,
         ST_TYPE
 } SymbolType_e;
 
 typedef struct {
         SymbolType_e type;
-        union value
+        union
         {
                 int variable_type; // Could also double as function return type
+                unsigned int enum_index; // for ST_ENUM_CONST
                 // TODO what to do with function parameters
         };
 } symbol_t;
@@ -39,6 +41,8 @@ public:
 
         void PushScope(std::string);
         void PopScope();
+
+        // void SetValueType(std::string, );
 
         void PrintScope(); //For Debugging
 

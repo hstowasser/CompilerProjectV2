@@ -649,7 +649,11 @@ bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global
         return ret;
 }
 
-bool Parser::parseTypeMark(std::list<token_t>::iterator *itr)
+/**     This gets  called by parseProcedureHeader, parseVariableDeclaration and parseTypeMark
+ *      if it is called by parseTypeMark4
+ * 
+ */
+bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global /*= false*/)
 {
         debug_print_call();
         bool ret = false;
@@ -665,7 +669,7 @@ bool Parser::parseTypeMark(std::list<token_t>::iterator *itr)
                 this->inc_ptr(itr); // Move to next token
                 ret = true;
         }else if ((*itr)->type == T_IDENTIFIER){
-                // TODO check symbol table for type?
+                // TODO check symbol table for type
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
                 ret = true;
@@ -680,18 +684,30 @@ bool Parser::parseTypeMark(std::list<token_t>::iterator *itr)
                         return false; // TODO Handle error header missing parentheses
                 }
 
-                // loop through identifier
+                // loop through enum identifiers
+                unsigned int e_index = 0;
                 do{
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
                         
                         // Check identifier
                         if ((*itr)->type == T_IDENTIFIER){
-                                debug_print_token(**itr);
-                                this->inc_ptr(itr); // Move to next token
+                                // Add to symbol table with associated index
+                                // Unless Wilsey says otherwise
+                                symbol_t symbol;
+                                symbol.type = ST_ENUM_CONST;
+                                symbol.enum_index = e_index; // Integer value of the enum
+                                if (global){
+                                        this->scope->AddGlobalSymbol(*(*itr)->getStringValue(), symbol);
+                                }else{
+                                        this->scope->AddSymbol(*(*itr)->getStringValue(), symbol);
+                                }
+                                debug_print_token(**itr);         
+                                this->inc_ptr(itr); // Move to next token                       
                         }else{
                                 return false; // TODO Handle error header missing identifier
                         }
+                        e_index++;
 
                 }while ((*itr)->type == T_SYM_COMMA);
 
@@ -952,7 +968,7 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr)
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
                 ret = true;
-        }else if ((*itr)->type == T_RW_STRING){
+        }else if ((*itr)->type == T_CONST_STRING){
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
                 ret = true;
@@ -997,5 +1013,9 @@ void Parser::parse(std::list<token_t> token_list)
         this->itr_end = token_list.end();
         itr = token_list.begin();
         bool ret = this->parseProgram(&itr);
-        printf("%d \n", ret);
+        if (ret){
+                printf("Pass\n");
+        }else{
+                printf("Fail\n");
+        }
 }
