@@ -2,6 +2,8 @@
 #include <string>
 #include <map>
 #include <list>
+#include "Token.hpp"
+#include "Symbol.hpp"
 
 typedef enum {
         ST_UNKNOWN,
@@ -11,14 +13,26 @@ typedef enum {
         ST_TYPE
 } SymbolType_e;
 
-typedef struct {
+
+typedef struct _type_holder_t type_holder_t;
+typedef struct _symbol_t symbol_t;
+
+typedef struct _type_holder_t{
+        token_type_e type; // INT FLOAT BOOL ENUM STRING IDENTIFIER are the only valid values
+        // IF CUSTOM
+        std::map<std::string,symbol_t>::iterator ptr; // Pointer to custom type symbol
+} type_holder_t;
+
+typedef struct _symbol_t{
         SymbolType_e type;
-        union
-        {
-                int variable_type; // Could also double as function return type
+        //union {
+                type_holder_t variable_type; // Could also double as function return type
                 unsigned int enum_index; // for ST_ENUM_CONST
-                // TODO what to do with function parameters
-        };
+        //};
+
+        // TODO what to do with function parameters. Will need to allocate memory
+        unsigned int parameter_ct;
+        type_holder_t * parameter_types; // Will need to account for memory leak
 } symbol_t;
 
 typedef std::map<std::string,symbol_t> symbol_table_t; // rename to symbol table?
