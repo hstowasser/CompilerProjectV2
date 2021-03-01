@@ -1,8 +1,10 @@
 #include "Parser.hpp"
 #include "Token.hpp"
 
-#if 0
 #include <stdio.h>
+#include <stdarg.h>
+
+#if 0
 #define debug_print_call() printf("%s\n", __FUNCTION__)
 #else
 #define debug_print_call()
@@ -14,7 +16,7 @@
 #define debug_print_token(itr)
 #endif
 
-#include <stdarg.h>
+
 
 #define error_printf(token, fmt, ...) printf("ERROR: Line %d - " fmt, (token)->line_num, ##__VA_ARGS__)
 
@@ -806,6 +808,28 @@ bool Parser::parseProgramHeader(std::list<token_t>::iterator *itr)
         return ret;
 }
 
+/* NOTES FOR TYPECHECKING
+   When doing type checking it would be useful for parseExpression
+   to return the type of the expression. This could be difficult to implement
+   because expressions may mix types which makes things more complicated.
+
+   Booleans may be converted to ints and vice versa in relational operations.
+
+        Expressions are strongly typed and types
+        must match. However there is automatic
+        conversion in the arithmetic operators to
+        allow any mixing between integers and
+        floats.
+
+        "Furthermore, the relational
+        operators can compare booleans with
+        integers (booleans are converted to integers
+        as: false → 0, true → 1; integers are
+        converted to bools as: the integer value 0 is
+        converted to false, all other integer values
+        are converted to true)"
+
+*/
 bool Parser::parseExpression(std::list<token_t>::iterator *itr)
 {
         debug_print_call();
@@ -870,6 +894,11 @@ bool Parser::parseRelation(std::list<token_t>::iterator *itr)
         return ret;
 }
 
+/* NOTES FOR TYPE CHECKING
+        "The type signatures of a procedures
+        arguments must match exactly their
+        parameter declaration."
+*/
 bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr)
 {
         debug_print_call();
