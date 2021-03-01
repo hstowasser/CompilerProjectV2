@@ -34,6 +34,24 @@ void Scope::AddGlobalSymbol(std::string name, symbol_t symbol)
     this->global_symbol_table[name] = symbol;
 }
 
+std::map<std::string,symbol_t>::iterator Scope::Find(std::string name, bool* success){
+    std::map<std::string,symbol_t>::iterator ret;
+    ret = this->symbol_tables[this->current_scope_name].find(name);
+    
+    if (ret != this->symbol_tables[this->current_scope_name].end()){
+        *success = true;
+    }else{
+        ret = this->global_symbol_table.find(name);
+        if (ret == this->global_symbol_table.end())
+        {
+            *success = false;
+        }else{
+            *success = true;
+        }
+    }
+    return ret;
+}
+
 void Scope::PrintScope()
 {
     // Print Global Scope
@@ -58,6 +76,4 @@ void Scope::PrintScope()
                 << std::endl;
         }
     }
-
-
 }

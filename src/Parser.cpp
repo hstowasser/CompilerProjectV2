@@ -488,6 +488,8 @@ bool Parser::parseProcedureDeclaration(std::list<token_t>::iterator *itr, bool g
 
 bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global)
 {
+        symbol_t symbol;
+        std::string name;
         debug_print_call();
         bool ret = false;
 
@@ -501,18 +503,8 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
 
         // check identifier
         if ((*itr)->type == T_IDENTIFIER){
-                
-                symbol_t symbol;
                 symbol.type = ST_PROCEDURE;
-                if (global){
-                        this->scope->AddGlobalSymbol(*(*itr)->getStringValue(), symbol);
-                        this->scope->PushScope(*(*itr)->getStringValue());
-                }else{
-                        // To allow for recursive calls add procedure symbol to both current and next scope
-                        this->scope->AddSymbol(*(*itr)->getStringValue(), symbol);
-                        this->scope->PushScope(*(*itr)->getStringValue());
-                        this->scope->AddSymbol(*(*itr)->getStringValue(), symbol);
-                }
+                name = *(*itr)->getStringValue();
 
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
@@ -531,7 +523,7 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
         }
 
         // parseTypeMark
-        ret = this->parseTypeMark(itr);
+        ret = this->parseTypeMark(itr,global,&symbol); // TODO add type to symbol
         if (!ret){
                 return false;
         }
@@ -542,6 +534,7 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
                 this->inc_ptr(itr); // Move to next token
 
                 ret = this->parseParameterList(itr);
+                // TODO add parameter types to symbol
 
                 if ((*itr)->type == T_SYM_RPAREN){
                         debug_print_token(**itr);
@@ -553,6 +546,16 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
         }else{
                 error_printf( *itr, "Expected parentheses after procedure identifier \n");
                 return false;
+        }
+
+        if (global){
+                this->scope->AddGlobalSymbol(name, symbol);
+                this->scope->PushScope(name);
+        }else{
+                // To allow for recursive calls add procedure symbol to both current and next scope
+                this->scope->AddSymbol(name, symbol);
+                this->scope->PushScope(name);
+                this->scope->AddSymbol(name, symbol);
         }
 
         return ret;
@@ -696,10 +699,22 @@ bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global
  *      if it is called by parseTypeMark4
  * 
  */
-bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global /*= false*/)
+bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global /*= false*/, symbol_t* symbol /*= NULL*/)
 {
         debug_print_call();
         bool ret = false;
+
+        if (((*itr)->type == T_RW_INTEGER) ||
+            ((*itr)->type == T_RW_FLOAT) ||
+            ((*itr)->type == T_RW_STRING) ||
+            ((*itr)->type == T_RW_BOOL) ||
+            ((*itr)->type == T_RW_ENUM) ||
+            ((*itr)->type == T_IDENTIFIER))
+        {
+                if (symbol != NULL){
+                        symbol->variable_type.type = (*itr)->type;
+                }
+        }
 
         // check for integer or float or string or bool
         // then get identifier
@@ -712,7 +727,17 @@ bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global /*= fa
                 this->inc_ptr(itr); // Move to next token
                 ret = true;
         }else if ((*itr)->type == T_IDENTIFIER){
-                // TODO check symbol table for type
+                // Check symbol table for type. If exists set symbol->variable_type.ptr
+                bool success;
+                std::map<std::string,symbol_t>::iterator temp;
+                temp = this->scope->Find(*((*itr)->getStringValue()), &success);
+                if (success){
+                        symbol->variable_type.itr = temp;
+                } else {
+                        error_printf( *itr, "Type %s is not defined \n",(*itr)->getStringValue()->c_str());
+                        return false;
+                }
+
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
                 ret = true;
@@ -765,8 +790,9 @@ bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global /*= fa
                         error_printf( *itr, "Expected closing brace after \"ENUM\" declaration \n");
                         return false;
                 }
+        }else{
+                return false;
         }
-        // else return false
 
         return ret;
 }

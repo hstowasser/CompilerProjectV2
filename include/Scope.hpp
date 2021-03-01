@@ -18,17 +18,16 @@ typedef struct _type_holder_t type_holder_t;
 typedef struct _symbol_t symbol_t;
 
 typedef struct _type_holder_t{
-        token_type_e type; // INT FLOAT BOOL ENUM STRING IDENTIFIER are the only valid values
-        // IF CUSTOM
-        std::map<std::string,symbol_t>::iterator ptr; // Pointer to custom type symbol
+        token_type_e type; // T_RW_INTEGER T_RW_FLOAT T_RW_BOOL T_RW_ENUM T_RW_STRING RW_IDENTIFIER are the only valid values
+
+        // IF RW_IDENTIFIER
+        std::map<std::string,symbol_t>::iterator itr; // Pointer to custom type symbol
 } type_holder_t;
 
 typedef struct _symbol_t{
         SymbolType_e type;
-        //union {
-                type_holder_t variable_type; // Could also double as function return type
-                unsigned int enum_index; // for ST_ENUM_CONST
-        //};
+        type_holder_t variable_type; // Could also double as function return type
+        unsigned int enum_index; // for ST_ENUM_CONST
 
         // TODO what to do with function parameters. Will need to allocate memory
         unsigned int parameter_ct;
@@ -55,6 +54,8 @@ public:
 
         void PushScope(std::string);
         void PopScope();
+
+        std::map<std::string,symbol_t>::iterator Find(std::string, bool* success); //returns 
 
         // void SetValueType(std::string, );
 
