@@ -1,9 +1,110 @@
 #include "Scope.hpp"
 #include <iostream>
 
+bool type_holder_cmp(type_holder_t a,  type_holder_t b)
+{
+    if(a.type == b.type){
+        if( a.type == T_IDENTIFIER){
+            return a.itr == b.itr; // TODO Test
+        }else {
+            return true;
+        }
+    }else{
+        return false;
+    }
+}
+
 Scope::Scope()
 {
     this->current_scope_name = "GLOBAL";
+
+    // INITIALIZE BUILT IN FUNCTIONS
+
+    // putBool(bool Value): bool
+    symbol_t putBool;
+    std::string putBoolName = "PUTBOOL";
+    putBoolName += '\0';
+    putBool.type = ST_PROCEDURE;
+    putBool.parameter_ct = 1;
+    putBool.parameter_type_arr = (type_holder_t*)calloc(putBool.parameter_ct, sizeof(type_holder_t));
+    putBool.parameter_type_arr[0].type = T_RW_BOOL;
+    putBool.variable_type.type = T_RW_BOOL;
+    this->AddGlobalSymbol(putBoolName,putBool);
+
+    // putInteger(integer Value): bool
+    symbol_t putInteger;
+    std::string putIntegerName = "PUTINTEGER";
+    putIntegerName += '\0';
+    putInteger.type = ST_PROCEDURE;
+    putInteger.parameter_ct = 1;
+    putInteger.parameter_type_arr = (type_holder_t*)calloc(putInteger.parameter_ct, sizeof(type_holder_t));
+    putInteger.parameter_type_arr[0].type = T_RW_INTEGER;
+    putInteger.variable_type.type = T_RW_BOOL; //Return type
+    this->AddGlobalSymbol(putIntegerName,putInteger);
+
+    // putFloat(float Value): bool
+    symbol_t putFloat;
+    std::string putFloatName = "PUTFLOAT";
+    putFloatName += '\0';
+    putFloat.type = ST_PROCEDURE;
+    putFloat.parameter_ct = 1;
+    putFloat.parameter_type_arr = (type_holder_t*)calloc(putFloat.parameter_ct, sizeof(type_holder_t));
+    putFloat.parameter_type_arr[0].type = T_RW_FLOAT;
+    putFloat.variable_type.type = T_RW_BOOL; //Return type
+    this->AddGlobalSymbol(putFloatName,putFloat);
+
+    // putString(string Value): bool
+    symbol_t putString;
+    std::string putStringName = "PUTSTRING";
+    putStringName += '\0';
+    putString.type = ST_PROCEDURE;
+    putString.parameter_ct = 1;
+    putString.parameter_type_arr = (type_holder_t*)calloc(putString.parameter_ct, sizeof(type_holder_t));
+    putString.parameter_type_arr[0].type = T_RW_STRING;
+    putString.variable_type.type = T_RW_BOOL; //Return type
+    this->AddGlobalSymbol(putStringName,putString);
+
+    // sqrt(integer Value): float
+    symbol_t sqrt;
+    sqrt.type = ST_PROCEDURE;
+    sqrt.parameter_ct = 1;
+    sqrt.parameter_type_arr = (type_holder_t*)calloc(sqrt.parameter_ct, sizeof(type_holder_t));
+    sqrt.parameter_type_arr[0].type = T_RW_INTEGER;
+    sqrt.variable_type.type = T_RW_FLOAT; //Return type
+    this->AddGlobalSymbol("SQRT",sqrt);
+
+    // getBool(): bool Value
+    symbol_t getBool;
+    std::string getBoolName = "GETBOOL";
+    getBoolName += '\0';
+    getBool.type = ST_PROCEDURE;
+    getBool.variable_type.type = T_RW_BOOL;
+    this->AddGlobalSymbol(getBoolName,getBool);
+
+    // getInteger(): integer Value
+    symbol_t getInteger;
+    std::string getIntegerName = "GETINTEGER";
+    getIntegerName += '\0';
+    getInteger.type = ST_PROCEDURE;
+    getInteger.variable_type.type = T_RW_INTEGER;
+    this->AddGlobalSymbol(getIntegerName,getInteger);
+
+    // getFloat(): float Value
+    symbol_t getFloat;
+    std::string getFloatName = "GETFLOAT";
+    getFloatName += '\0';
+    getFloat.type = ST_PROCEDURE;
+    getFloat.variable_type.type = T_RW_FLOAT;
+    this->AddGlobalSymbol(getFloatName,getFloat);
+
+    // getString(): string Value
+    symbol_t getString;
+    std::string getStringName = "GETSTRING";
+    getStringName += '\0';
+    getString.type = ST_PROCEDURE;
+    getString.variable_type.type = T_RW_STRING;
+    this->AddGlobalSymbol(getStringName,getString);
+    
 }
 
 void Scope::PushScope(std::string name)
@@ -19,8 +120,8 @@ void Scope::PushScope(std::string name)
 
 void Scope::PopScope()
 {
-    this->current_scope_name = this->scope_stack.back();
     this->scope_stack.pop_back();
+    this->current_scope_name = this->scope_stack.back();
 }
 
 void Scope::AddSymbol(std::string name, symbol_t symbol)
@@ -37,6 +138,8 @@ void Scope::AddGlobalSymbol(std::string name, symbol_t symbol)
 std::map<std::string,symbol_t>::iterator Scope::Find(std::string name, bool* success){
     std::map<std::string,symbol_t>::iterator ret;
     ret = this->symbol_tables[this->current_scope_name].find(name);
+
+    // Note: For whatever reason, the strings from tokens have an extra null termination.
     
     if (ret != this->symbol_tables[this->current_scope_name].end()){
         *success = true;

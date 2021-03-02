@@ -4,13 +4,13 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#if 0
+#if 1
 #define debug_print_call() printf("%s\n", __FUNCTION__)
 #else
 #define debug_print_call()
 #endif
 
-#if 0
+#if 1
 #define debug_print_token(itr) print_token(itr)
 #else
 #define debug_print_token(itr)
@@ -179,7 +179,7 @@ bool Parser::parseAssignmentStatement(std::list<token_t>::iterator *itr)
         }
 
         // parse expression
-        ret = this->parseExpression(itr);
+        ret = this->parseExpression(itr); // TODO check that destination type matches expression type
 
         return ret; 
 }
@@ -204,7 +204,7 @@ bool Parser::parseIfStatement(std::list<token_t>::iterator *itr)
                 return false;
         }
 
-        ret = this->parseExpression(itr);
+        ret = this->parseExpression(itr); // TODO Check that expression type is either int or bool
         if (!ret){
                 return false;
         }
@@ -307,7 +307,7 @@ bool Parser::parseLoopStatement(std::list<token_t>::iterator *itr)
                 return false;
         }
 
-        ret = this->parseExpression(itr);
+        ret = this->parseExpression(itr); // TODO Check that expression is bool or int
         if (!ret){
                 return false;
         }
@@ -483,6 +483,8 @@ bool Parser::parseProcedureDeclaration(std::list<token_t>::iterator *itr, bool g
 
         ret = this->parseProcedureBody(itr);
 
+        this->scope->PopScope();
+
         return ret;
 }
 
@@ -533,7 +535,7 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
 
-                ret = this->parseParameterList(itr, &symbol);
+                ret = this->parseParameterList(itr, global, &symbol);
 
                 if ((*itr)->type == T_SYM_RPAREN){
                         debug_print_token(**itr);
@@ -560,7 +562,7 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
         return ret;
 }
 
-bool Parser::parseParameterList(std::list<token_t>::iterator *itr, symbol_t* symbol)
+bool Parser::parseParameterList(std::list<token_t>::iterator *itr, bool global /*= false*/, symbol_t* symbol /*= NULL*/)
 {
         debug_print_call();
         bool ret = false;
@@ -575,7 +577,7 @@ bool Parser::parseParameterList(std::list<token_t>::iterator *itr, symbol_t* sym
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
                 }
-                ret = this->parseParameter(itr, &temp_parameter_type); // TODO Add type tracking
+                ret = this->parseParameter(itr, global, &temp_parameter_type); // TODO Test type tracking
                 temp_param_list.push_back(temp_parameter_type);
                 symbol->parameter_ct++; // Increment parameterlist counter
                 first = false;
@@ -621,7 +623,7 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
         // check for identifier
         if ((*itr)->type == T_IDENTIFIER){
                 symbol.type = ST_VARIABLE;
-                name = *(*itr)->getStringValue()
+                name = *(*itr)->getStringValue();
 
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
@@ -720,7 +722,7 @@ bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global
         }
 
         // parse typemark
-        ret = this->parseTypeMark(itr, global, &symbol);
+        ret = this->parseTypeDef(itr, global, &symbol);
         if( !ret){
                 return false;
         }
@@ -729,6 +731,68 @@ bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global
                 this->scope->AddGlobalSymbol(name, symbol);
         }else{
                 this->scope->AddSymbol(name, symbol);
+        }
+
+        return ret;
+}
+
+bool Parser::parseTypeDef(std::list<token_t>::iterator *itr, bool global /*= false*/, symbol_t* symbol /*= NULL*/)
+{
+        debug_print_call();
+        bool ret = false;
+
+        if (((*itr)->type == T_RW_ENUM)){ // if enum
+                debug_print_token(**itr);
+                this->inc_ptr(itr); // Move to next token
+
+                // check for LPAREN
+                if ((*itr)->type == T_SYM_LBRACE){
+                        // Special case, don't move to next token till do/while
+                }else{
+                        error_printf( *itr, "Expected opening brace after \"enum\" \n");
+                        return false;
+                }
+
+                // loop through enum identifiers
+                unsigned int e_index = 0;
+                do{
+                        debug_print_token(**itr);
+                        this->inc_ptr(itr); // Move to next token
+
+                        // Check identifier
+                        if ((*itr)->type == T_IDENTIFIER){
+                                // Add to symbol table with associated index
+                                symbol_t temp_symbol;
+                                temp_symbol.type = ST_ENUM_CONST;
+                                temp_symbol.enum_index = e_index; // Integer value of the enum
+                                if (global){
+                                        this->scope->AddGlobalSymbol(*(*itr)->getStringValue(), temp_symbol);
+                                }else{
+                                        this->scope->AddSymbol(*(*itr)->getStringValue(), temp_symbol);
+                                }
+                                debug_print_token(**itr);
+                                this->inc_ptr(itr); // Move to next token                       
+                        }else{
+                                error_printf( *itr, "Expected identifier in \"ENUM\" declaration \n");
+                                return false;
+                        }
+                        e_index++;
+
+                }while ((*itr)->type == T_SYM_COMMA);
+
+                // check for RPAREN
+                if ((*itr)->type == T_SYM_RBRACE){
+                        debug_print_token(**itr);
+                        this->inc_ptr(itr); // Move to next token
+                        ret = true;
+                }else{
+                        error_printf( *itr, "Expected closing brace after \"ENUM\" declaration \n");
+                        return false;
+                }
+        }else{
+                // parseTypeMark
+                ret = parseTypeMark(itr, global, symbol);
+                return false;
         }
 
         return ret;
@@ -780,57 +844,7 @@ bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global /*= fa
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
                 ret = true;
-        }else if (((*itr)->type == T_RW_ENUM)){ // if enum
-                debug_print_token(**itr);
-                this->inc_ptr(itr); // Move to next token
-
-                // check for LPAREN
-                if ((*itr)->type == T_SYM_LBRACE){
-                        // Special case, don't move to next token till do/while
-                }else{
-                        error_printf( *itr, "Expected opening brace after \"enum\" \n");
-                        return false;
-                }
-
-                // loop through enum identifiers
-                unsigned int e_index = 0;
-                do{
-                        debug_print_token(**itr);
-                        this->inc_ptr(itr); // Move to next token
-                        
-                        // Check identifier
-                        if ((*itr)->type == T_IDENTIFIER){
-                                // Add to symbol table with associated index
-                                // Unless Wilsey says otherwise
-                                // TODO make parseTypeDef() or something to move enum declaration.
-                                symbol_t symbol;
-                                symbol.type = ST_ENUM_CONST;
-                                symbol.enum_index = e_index; // Integer value of the enum
-                                if (global){
-                                        this->scope->AddGlobalSymbol(*(*itr)->getStringValue(), symbol);
-                                }else{
-                                        this->scope->AddSymbol(*(*itr)->getStringValue(), symbol);
-                                }
-                                debug_print_token(**itr);
-                                this->inc_ptr(itr); // Move to next token                       
-                        }else{
-                                error_printf( *itr, "Expected identifier in \"ENUM\" declaration \n");
-                                return false;
-                        }
-                        e_index++;
-
-                }while ((*itr)->type == T_SYM_COMMA);
-
-                // check for RPAREN
-                if ((*itr)->type == T_SYM_RBRACE){
-                        debug_print_token(**itr);
-                        this->inc_ptr(itr); // Move to next token
-                        ret = true;
-                }else{
-                        error_printf( *itr, "Expected closing brace after \"ENUM\" declaration \n");
-                        return false;
-                }
-        }else{
+        }else {
                 return false;
         }
 
@@ -896,17 +910,20 @@ bool Parser::parseProgramHeader(std::list<token_t>::iterator *itr)
         are converted to true)"
 
 */
-bool Parser::parseExpression(std::list<token_t>::iterator *itr)
+bool Parser::parseExpression(std::list<token_t>::iterator *itr, type_holder_t* parameter_type /*= Null*/)
 {
         debug_print_call();
         bool ret = false;
+        type_holder_t temp_arithop;
+        type_holder_t temp_expression;
+
         // check for not
         if ((*itr)->type == T_OP_LOGI_NOT){
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }
         
-        ret = this->parseArithOp(itr);
+        ret = this->parseArithOp(itr, &temp_arithop); // TODO add type checking
         if (ret){
                 if (((*itr)->type == T_OP_LOGI_AND) ||
                     ((*itr)->type == T_OP_LOGI_OR))
@@ -914,17 +931,39 @@ bool Parser::parseExpression(std::list<token_t>::iterator *itr)
                         debug_print_token(**itr);
                         // Then it's an Expression?
                         this->inc_ptr(itr); // Move to next token
-                        ret = this->parseExpression(itr);
+                        ret = this->parseExpression(itr, &temp_expression);
+
+                        if (parameter_type != NULL) {
+                                if (type_holder_cmp(temp_expression, temp_arithop)){
+                                        // Both are the same
+                                        *parameter_type = temp_arithop;
+                                } else if ( ((temp_expression.type == T_RW_INTEGER) || (temp_expression.type == T_RW_BOOL)) &&
+                                        ((temp_expression.type == T_RW_INTEGER) || (temp_expression.type == T_RW_BOOL))) {
+                                        // Combinations of int and bool are allowed
+                                        parameter_type->type = T_RW_BOOL; // Default to bool
+                                } else {
+                                        error_printf( *itr, "Types do not match \n"); // TODO print types
+                                        return false;
+                                }
+                        }
+                        
+                }else{
+                        if (parameter_type != NULL) {
+                                *parameter_type = temp_arithop;
+                        }                        
                 }
         }
         return ret;
 }
 
-bool Parser::parseArithOp(std::list<token_t>::iterator *itr)
+bool Parser::parseArithOp(std::list<token_t>::iterator *itr, type_holder_t* parameter_type)
 {
         debug_print_call();
         bool ret = false;
-        ret = this->parseRelation(itr);
+        type_holder_t temp_relation;
+        type_holder_t temp_arithop;
+
+        ret = this->parseRelation(itr, &temp_relation); // TODO test type checking
         if (ret){
                 if (((*itr)->type == T_OP_ARITH_MINUS) ||
                     ((*itr)->type == T_OP_ARITH_PLUS))
@@ -932,17 +971,41 @@ bool Parser::parseArithOp(std::list<token_t>::iterator *itr)
                         debug_print_token(**itr);
                         // Then it's an ArithOp?
                         this->inc_ptr(itr); // Move to next token
-                        ret = this->parseArithOp(itr);
+                        ret = this->parseArithOp(itr, &temp_arithop);
+
+                        if (type_holder_cmp(temp_relation, temp_arithop)){
+                                // Both are the same
+                                *parameter_type = temp_relation;
+                        } else if ( ((temp_relation.type == T_RW_INTEGER) || (temp_relation.type == T_RW_BOOL)) &&
+                                ((temp_arithop.type == T_RW_INTEGER) || (temp_arithop.type == T_RW_BOOL))) {
+                                // Combinations of int and bool are allowed
+                                parameter_type->type = T_RW_INTEGER; // Default to int
+                        } else if ( ((temp_relation.type == T_RW_INTEGER) || (temp_relation.type == T_RW_FLOAT)) &&
+                                ((temp_arithop.type == T_RW_INTEGER) || (temp_arithop.type == T_RW_FLOAT))) {
+                                // Combinations of int and float are allowed
+                                parameter_type->type = T_RW_FLOAT; // Default to float
+                        } else {
+                                error_printf( *itr, "Types do not match \n"); // TODO print types
+                                return false;
+                        }
+                }else{
+                        *parameter_type = temp_relation;
                 }
         }
+
+        
+
         return ret;
 }
 
-bool Parser::parseRelation(std::list<token_t>::iterator *itr)
+bool Parser::parseRelation(std::list<token_t>::iterator *itr, type_holder_t* parameter_type)
 {
         debug_print_call();
         bool ret = false;
-        ret = this->parseTerm(itr);
+        type_holder_t temp_relation;
+        type_holder_t temp_term;
+
+        ret = this->parseTerm(itr, &temp_term);
         if (ret){
                 if (((*itr)->type == T_OP_REL_GREATER) ||
                     ((*itr)->type == T_OP_REL_LESS) ||
@@ -954,9 +1017,25 @@ bool Parser::parseRelation(std::list<token_t>::iterator *itr)
                         debug_print_token(**itr);
                         // Then it's a relation?
                         this->inc_ptr(itr); // Move to next token
-                        ret = this->parseRelation(itr);
+                        ret = this->parseRelation(itr, &temp_relation);
+
+                        if (type_holder_cmp(temp_relation, temp_term)){
+                                // Both are the same
+                                *parameter_type = temp_term;
+                        } else if ( ((temp_relation.type == T_RW_INTEGER) || (temp_relation.type == T_RW_BOOL)) &&
+                                ((temp_term.type == T_RW_INTEGER) || (temp_term.type == T_RW_BOOL))) {
+                                // Combinations of int and bool are allowed
+                                parameter_type->type = T_RW_BOOL; // Default to bool
+                        } else {
+                                error_printf( *itr, "Types do not match \n"); // TODO print types
+                                return false;
+                        }
+                }else{
+                        *parameter_type = temp_term;
                 }
         }
+
+
         return ret;
 }
 
@@ -965,13 +1044,30 @@ bool Parser::parseRelation(std::list<token_t>::iterator *itr)
         arguments must match exactly their
         parameter declaration."
 */
-bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr)
+bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr, type_holder_t* parameter_type)
 {
         debug_print_call();
         bool ret = false;
 
         // Check for identifier
         if ((*itr)->type == T_IDENTIFIER){
+                // Check that identifier is defined as a procedure
+                // set parameter type to return type of procedure
+                bool success;
+                std::map<std::string,symbol_t>::iterator temp;
+                temp = this->scope->Find(*((*itr)->getStringValue()), &success);
+                if (success){
+                        if (temp->second.type == ST_PROCEDURE){
+                                *parameter_type = temp->second.variable_type;
+                        }else{
+                                error_printf( *itr, "Identifier %s is not callable \n",(*itr)->getStringValue()->c_str());
+                                return false;
+                        }                        
+                } else {
+                        error_printf( *itr, "Procedure %s is not defined \n",(*itr)->getStringValue()->c_str());
+                        return false;
+                }
+
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else {
@@ -1033,11 +1129,14 @@ bool Parser::parseArgumentList(std::list<token_t>::iterator *itr)
         return ret;
 }
 
-bool Parser::parseTerm(std::list<token_t>::iterator *itr)
+bool Parser::parseTerm(std::list<token_t>::iterator *itr, type_holder_t* parameter_type)
 {
         debug_print_call();
         bool ret = false;
-        ret = this->parseFactor(itr);
+        type_holder_t temp_factor;
+        type_holder_t temp_term;
+
+        ret = this->parseFactor(itr, &temp_factor);
         if (ret){
                 if (((*itr)->type == T_OP_TERM_DIVIDE) ||
                     ((*itr)->type == T_OP_TERM_MULTIPLY))
@@ -1045,18 +1144,47 @@ bool Parser::parseTerm(std::list<token_t>::iterator *itr)
                         debug_print_token(**itr);
                         // Then it's a term?
                         this->inc_ptr(itr); // Move to next token
-                        ret = this->parseTerm(itr);
+                        ret = this->parseTerm(itr, &temp_term);
+
+                        if (type_holder_cmp(temp_factor, temp_term)){
+                                // Both are the same
+                                *parameter_type = temp_factor;
+                        } else if ( ((temp_factor.type == T_RW_INTEGER) || (temp_factor.type == T_RW_FLOAT)) &&
+                                ((temp_term.type == T_RW_INTEGER) || (temp_term.type == T_RW_FLOAT))) {
+                                // Combinations of int and float are allowed
+                                parameter_type->type = T_RW_FLOAT; // Default to float
+                        } else {
+                                error_printf( *itr, "Types do not match \n"); // TODO print types
+                                return false;
+                        }
+                }else{
+                        *parameter_type = temp_factor;
                 }
         }
+
+
+
         return ret;
 }
 
-bool Parser::parseName(std::list<token_t>::iterator *itr)
+bool Parser::parseName(std::list<token_t>::iterator *itr, type_holder_t* parameter_type)
 {
         debug_print_call();
         bool ret = false;
         // Check for identifier
         if ((*itr)->type == T_IDENTIFIER){
+                // Lookup in symbol table.
+                // Set parameter_type
+                bool success;
+                std::map<std::string,symbol_t>::iterator temp;
+                temp = this->scope->Find(*((*itr)->getStringValue()), &success);
+                if (success){
+                        *parameter_type = temp->second.variable_type;
+                } else {
+                        error_printf( *itr, "Name %s is not defined \n",(*itr)->getStringValue()->c_str());
+                        return false;
+                }
+
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
                 ret = true;
@@ -1069,9 +1197,12 @@ bool Parser::parseName(std::list<token_t>::iterator *itr)
                 // parse expression
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
-                ret = this->parseExpression(itr);
+                type_holder_t expr_type;
+                ret = this->parseExpression(itr, &expr_type);
                 if ( ret == false){
                         return ret;
+                } else if ( expr_type.type != T_RW_INTEGER){
+                        error_printf( *itr, "Array length must be of type integer \n");
                 }
 
                 if ((*itr)->type == T_SYM_RBRACKET){
@@ -1086,7 +1217,12 @@ bool Parser::parseName(std::list<token_t>::iterator *itr)
         return ret;
 }
 
-bool Parser::parseFactor(std::list<token_t>::iterator *itr)
+
+/* NOTES FOR TYPE CHECKING
+   Inorder for parseExpression to return a type we have to propagate
+   the factor type back up through parseRelation and parseArithOp
+*/
+bool Parser::parseFactor(std::list<token_t>::iterator *itr, type_holder_t* parameter_type)
 {
         debug_print_call();
         bool ret = false;
@@ -1094,7 +1230,7 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr)
         if ((*itr)->type == T_SYM_LPAREN){
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
-                ret = this->parseExpression(itr);
+                ret = this->parseExpression(itr, parameter_type);
                 if ((*itr)->type == T_SYM_RPAREN){
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
@@ -1103,14 +1239,17 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr)
                         ret = false;
                 }
         }else if ((*itr)->type == T_RW_TRUE){
+                parameter_type->type = T_RW_BOOL;
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
                 ret = true;
         }else if ((*itr)->type == T_RW_FALSE){
+                parameter_type->type = T_RW_BOOL;
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
                 ret = true;
         }else if ((*itr)->type == T_CONST_STRING){
+                parameter_type->type = T_RW_STRING;
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
                 ret = true;
@@ -1119,14 +1258,25 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr)
                 this->inc_ptr(itr); // Move to next token
                 if ((*itr)->type == T_CONST_INTEGER ||
                     (*itr)->type == T_CONST_FLOAT){
+                        if ((*itr)->type == T_CONST_INTEGER){
+                                parameter_type->type = T_RW_INTEGER;
+                        }else{
+                                parameter_type->type = T_RW_FLOAT;
+                        }
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
                         ret = true;
                 } else if (!ret){
-                        ret = this->parseName(itr);
+                        ret = this->parseName(itr, parameter_type);
                 }
         }else if ((*itr)->type == T_CONST_INTEGER ||
                  (*itr)->type == T_CONST_FLOAT){
+
+                if ((*itr)->type == T_CONST_INTEGER){
+                        parameter_type->type = T_RW_INTEGER;
+                }else{
+                        parameter_type->type = T_RW_FLOAT;
+                }
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
                 ret = true;
@@ -1139,11 +1289,11 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr)
                         // Move pointer back to original position
                         *itr = temp_itr;
                         // Not a procedure call
-                        ret = this->parseName(itr);
+                        ret = this->parseName(itr, parameter_type);
                 }else{
                         // Move pointer back to original position
                         *itr = temp_itr;
-                        ret = this->parseProcedureCall(itr);
+                        ret = this->parseProcedureCall(itr, parameter_type);
                 }
         }else{
                 error_printf( *itr, "Invalid Factor \n");
