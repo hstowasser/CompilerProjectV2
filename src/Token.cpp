@@ -1,7 +1,7 @@
 #include "Token.hpp"
 #include <stdio.h>
 
-static const char * token_type_to_string(token_type_e token_type)
+const char * token_type_to_string(token_type_e token_type)
 {
         switch (token_type){
         case T_IDENTIFIER:

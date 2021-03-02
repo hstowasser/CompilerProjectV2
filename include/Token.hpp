@@ -95,4 +95,6 @@ private:
 
 };
 
+const char * token_type_to_string(token_type_e token_type);
+
 void print_token(token_t token);

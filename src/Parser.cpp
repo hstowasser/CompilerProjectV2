@@ -584,6 +584,8 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
 {
         debug_print_call();
         bool ret = false;
+        std::string name;
+        symbol_t symbol;
 
         // check for "variable"
         if ((*itr)->type == T_RW_VARIABLE){
@@ -595,13 +597,9 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
 
         // check for identifier
         if ((*itr)->type == T_IDENTIFIER){
-                symbol_t symbol;
                 symbol.type = ST_VARIABLE;
-                if (global){
-                        this->scope->AddGlobalSymbol(*(*itr)->getStringValue(), symbol);
-                }else{
-                        this->scope->AddSymbol(*(*itr)->getStringValue(), symbol);
-                }
+                name = *(*itr)->getStringValue()
+
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
@@ -619,7 +617,7 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
         }
 
         // parse for type_mark
-        ret = this->parseTypeMark(itr);
+        ret = this->parseTypeMark(itr, global, &symbol);
         if (!ret){
                 return false;
         }
@@ -648,6 +646,12 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
                 }
         }
 
+        if (global){
+                this->scope->AddGlobalSymbol(name, symbol);
+        }else{
+                this->scope->AddSymbol(name, symbol);
+        }
+
         return ret;
 }
 
@@ -655,6 +659,8 @@ bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global
 {
         debug_print_call();
         bool ret = false;
+        std::string name;
+        symbol_t symbol;
 
         // check "type" tag
         if ((*itr)->type == T_RW_TYPE){
@@ -665,14 +671,10 @@ bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global
         }
 
         // check identifier
-        if ((*itr)->type == T_IDENTIFIER){
-                symbol_t symbol;
+        if ((*itr)->type == T_IDENTIFIER){                
                 symbol.type = ST_TYPE;
-                if (global){
-                        this->scope->AddGlobalSymbol(*(*itr)->getStringValue(), symbol);
-                }else{
-                        this->scope->AddSymbol(*(*itr)->getStringValue(), symbol);
-                }
+                name = *(*itr)->getStringValue();
+                
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
         }else{
@@ -690,7 +692,16 @@ bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global
         }
 
         // parse typemark
-        ret = this->parseTypeMark(itr);
+        ret = this->parseTypeMark(itr, global, &symbol);
+        if( !ret){
+                return false;
+        }
+
+        if (global){
+                this->scope->AddGlobalSymbol(name, symbol);
+        }else{
+                this->scope->AddSymbol(name, symbol);
+        }
 
         return ret;
 }
