@@ -23,11 +23,11 @@ private:
         bool parseProcedureHeader(std::list<token_t>::iterator *itr, bool global);
         bool parseProcedureBody(std::list<token_t>::iterator *itr);
 
-        bool parseParameterList(std::list<token_t>::iterator *itr);
-        bool parseParameter(std::list<token_t>::iterator *itr) {return this->parseVariableDeclaration(itr, false);}
+        bool parseParameterList(std::list<token_t>::iterator *itr, symbol_t* symbol = NULL);
+        bool parseParameter(std::list<token_t>::iterator *itr, type_holder_t* parameter_type) {return this->parseVariableDeclaration(itr, false, parameter_type);}
 
         bool parseProcedureDeclaration(std::list<token_t>::iterator *itr, bool global);
-        bool parseVariableDeclaration(std::list<token_t>::iterator *itr, bool global);
+        bool parseVariableDeclaration(std::list<token_t>::iterator *itr, bool global, type_holder_t* parameter_type = NULL);
         bool parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global);
 
         bool parseTypeMark(std::list<token_t>::iterator *itr, bool global = false, symbol_t* symbol = NULL);

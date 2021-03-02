@@ -31,7 +31,7 @@ typedef struct _symbol_t{
 
         // TODO what to do with function parameters. Will need to allocate memory
         unsigned int parameter_ct;
-        type_holder_t * parameter_types; // Will need to account for memory leak
+        type_holder_t * parameter_type_arr; // Will need to account for memory leak
 } symbol_t;
 
 typedef std::map<std::string,symbol_t> symbol_table_t; // rename to symbol table?
@@ -47,6 +47,7 @@ private:
         std::string current_scope_name;
 public:
         Scope();
+        // TODO add destructor that deletes memory allocated to parameter_type_arr
 
         // Adds a symbol to the current scope
         void AddSymbol(std::string, symbol_t symbol); // Consider adding redeclaration error output

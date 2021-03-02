@@ -523,7 +523,7 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
         }
 
         // parseTypeMark
-        ret = this->parseTypeMark(itr,global,&symbol); // TODO add type to symbol
+        ret = this->parseTypeMark(itr,global,&symbol);
         if (!ret){
                 return false;
         }
@@ -533,8 +533,7 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
 
-                ret = this->parseParameterList(itr);
-                // TODO add parameter types to symbol
+                ret = this->parseParameterList(itr, &symbol);
 
                 if ((*itr)->type == T_SYM_RPAREN){
                         debug_print_token(**itr);
@@ -561,10 +560,13 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
         return ret;
 }
 
-bool Parser::parseParameterList(std::list<token_t>::iterator *itr)
+bool Parser::parseParameterList(std::list<token_t>::iterator *itr, symbol_t* symbol)
 {
         debug_print_call();
         bool ret = false;
+        type_holder_t temp_parameter_type;
+        std::list<type_holder_t> temp_param_list;
+        symbol->parameter_ct = 0;
 
         bool first = true;
         do{
@@ -573,14 +575,35 @@ bool Parser::parseParameterList(std::list<token_t>::iterator *itr)
                         debug_print_token(**itr);
                         this->inc_ptr(itr); // Move to next token
                 }
-                ret = this->parseParameter(itr);
+                ret = this->parseParameter(itr, &temp_parameter_type); // TODO Add type tracking
+                temp_param_list.push_back(temp_parameter_type);
+                symbol->parameter_ct++; // Increment parameterlist counter
                 first = false;
         } while(ret && (*itr)->type == T_SYM_COMMA);
+
+        // Allocate memory for parameter_type_arr
+        symbol->parameter_type_arr = (type_holder_t*)calloc(symbol->parameter_ct, sizeof(type_holder_t));
+        if (symbol->parameter_type_arr == NULL){
+                // Failed to allocate memory... Panic
+                printf("Failed to allocate memory \n");
+                return false;
+        }
+
+        // Copy temp_param_list into symbol->parameter_type_arr
+        std::list<type_holder_t>::iterator it;
+        unsigned int i = 0;
+        for ( it = temp_param_list.begin(); it != temp_param_list.end(); it++){
+                symbol->parameter_type_arr[i] = *it;
+                i++;
+        }
 
         return ret;
 }
 
-bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool global)
+/**
+ *      symbol is only used by parseParameterList.
+ */
+bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool global /*= false*/, type_holder_t* parameter_type /*= NULL*/)
 {
         debug_print_call();
         bool ret = false;
@@ -620,6 +643,11 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
         ret = this->parseTypeMark(itr, global, &symbol);
         if (!ret){
                 return false;
+        }
+        if ( parameter_type != NULL){
+                // If this was called by parseParameterList
+                // return type so it can be stored in the procedure symbol
+                *parameter_type = symbol.variable_type;
         }
 
         // check for open bracket
@@ -774,6 +802,7 @@ bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global /*= fa
                         if ((*itr)->type == T_IDENTIFIER){
                                 // Add to symbol table with associated index
                                 // Unless Wilsey says otherwise
+                                // TODO make parseTypeDef() or something to move enum declaration.
                                 symbol_t symbol;
                                 symbol.type = ST_ENUM_CONST;
                                 symbol.enum_index = e_index; // Integer value of the enum
