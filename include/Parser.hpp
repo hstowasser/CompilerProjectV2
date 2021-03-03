@@ -32,6 +32,7 @@ private:
 
         bool parseTypeDef(std::list<token_t>::iterator *itr, bool global = false, symbol_t* symbol = NULL);
         bool parseTypeMark(std::list<token_t>::iterator *itr, bool global = false, symbol_t* symbol = NULL);
+        bool parseEnum(std::list<token_t>::iterator *itr, bool global = false, symbol_t* symbol = NULL);
 
         // All of these will need to return/check types
         bool parseExpression(std::list<token_t>::iterator *itr, type_holder_t* parameter_type = NULL);
@@ -44,7 +45,7 @@ private:
         
         bool parseArgumentList(std::list<token_t>::iterator *itr);
         
-        
+        bool AddSymbol_Helper(std::list<token_t>::iterator *itr, bool global, symbol_t symbol);
 
         
         void next_token(std::list<token_t>::iterator *itr);

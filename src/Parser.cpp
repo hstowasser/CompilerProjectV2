@@ -39,6 +39,31 @@ void Parser::next_token(std::list<token_t>::iterator *itr)
         }
 }
 
+bool Parser::AddSymbol_Helper(std::list<token_t>::iterator *itr, bool global, symbol_t symbol)
+{
+        // Check if symbol already exists
+        // this->scope->Find()
+        bool success;
+        if (global){
+                this->scope->FindGlobal(*((*itr)->getStringValue()), &success);
+        }else{
+                this->scope->FindLocal(*((*itr)->getStringValue()), &success);
+        }
+
+        if( success == true){
+                // Error Symbol already exists
+                error_printf( *itr, "%s redefined \n", (*((*itr)->getStringValue())).c_str());
+                return false;
+        }
+
+        if (global){
+                this->scope->AddGlobalSymbol(*(*itr)->getStringValue(), symbol);
+        }else{
+                this->scope->AddSymbol(*(*itr)->getStringValue(), symbol);
+        }
+        return true;
+}
+
 bool Parser::parseProgram(std::list<token_t>::iterator *itr)
 {
         debug_print_call();
@@ -742,62 +767,67 @@ bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global
         return ret;
 }
 
+bool Parser::parseEnum(std::list<token_t>::iterator *itr, bool global /*= false*/, symbol_t* symbol /*= NULL*/)
+{
+        debug_print_call();
+        bool ret = true;
+
+        symbol->variable_type.type = T_RW_INTEGER;
+
+        this->next_token(itr); // Move to next token
+
+        // check for LPAREN
+        if ((*itr)->type == T_SYM_LBRACE){
+                // Special case, don't move to next token till do/while
+        }else{
+                error_printf( *itr, "Expected opening brace after \"enum\" \n");
+                return false;
+        }
+
+        // loop through enum identifiers
+        unsigned int e_index = 0;
+        do{
+                this->next_token(itr); // Move to next token
+
+                // Check identifier
+                if ((*itr)->type == T_IDENTIFIER){
+                        // Add to symbol table with associated index
+                        symbol_t temp_symbol;
+                        temp_symbol.type = ST_ENUM_CONST;
+                        temp_symbol.variable_type.type = T_RW_INTEGER; // individual enum value treated as integer
+                        temp_symbol.enum_index = e_index; // Integer value of the enum
+
+                        ret = this->AddSymbol_Helper(itr, global, temp_symbol); // Add to table
+
+                        this->next_token(itr); // Move to next token                       
+                }else{
+                        error_printf( *itr, "Expected identifier in \"ENUM\" declaration \n");
+                        return false;
+                }
+                e_index++;
+
+        }while ((*itr)->type == T_SYM_COMMA);
+
+        // check for RPAREN
+        if ((*itr)->type == T_SYM_RBRACE){
+                this->next_token(itr); // Move to next token
+        }else{
+                error_printf( *itr, "Expected closing brace after \"ENUM\" declaration \n");
+                return false;
+        }
+
+        return ret;
+}
+
 bool Parser::parseTypeDef(std::list<token_t>::iterator *itr, bool global /*= false*/, symbol_t* symbol /*= NULL*/)
 {
         debug_print_call();
         bool ret = false;
 
         if (((*itr)->type == T_RW_ENUM)){ // if enum
-                symbol->variable_type.type = T_RW_INTEGER;
-
-                this->next_token(itr); // Move to next token
-
-                // check for LPAREN
-                if ((*itr)->type == T_SYM_LBRACE){
-                        // Special case, don't move to next token till do/while
-                }else{
-                        error_printf( *itr, "Expected opening brace after \"enum\" \n");
-                        return false;
-                }
-
-                // loop through enum identifiers
-                unsigned int e_index = 0;
-                do{
-                        this->next_token(itr); // Move to next token
-
-                        // Check identifier
-                        if ((*itr)->type == T_IDENTIFIER){
-                                // Add to symbol table with associated index
-                                symbol_t temp_symbol;
-                                temp_symbol.type = ST_ENUM_CONST;
-                                temp_symbol.variable_type.type = T_RW_INTEGER; // individual enum value treated as integer
-                                temp_symbol.enum_index = e_index; // Integer value of the enum
-                                if (global){
-                                        this->scope->AddGlobalSymbol(*(*itr)->getStringValue(), temp_symbol);
-                                }else{
-                                        this->scope->AddSymbol(*(*itr)->getStringValue(), temp_symbol);
-                                }
-                                this->next_token(itr); // Move to next token                       
-                        }else{
-                                error_printf( *itr, "Expected identifier in \"ENUM\" declaration \n");
-                                return false;
-                        }
-                        e_index++;
-
-                }while ((*itr)->type == T_SYM_COMMA);
-
-                // check for RPAREN
-                if ((*itr)->type == T_SYM_RBRACE){
-                        this->next_token(itr); // Move to next token
-                        ret = true;
-                }else{
-                        error_printf( *itr, "Expected closing brace after \"ENUM\" declaration \n");
-                        return false;
-                }
+                ret = parseEnum(itr, global, symbol);
         }else{
-                // parseTypeMark
                 ret = parseTypeMark(itr, global, symbol);
-                return false;
         }
 
         return ret;
