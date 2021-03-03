@@ -20,6 +20,10 @@
 
 #define error_printf(token, fmt, ...) printf("ERROR: Line %d - " fmt, (token)->line_num, ##__VA_ARGS__)
 
+#define get_c_string(itr) (*((*itr)->getStringValue())).c_str() // Gets token identifier as c string
+#define get_string(itr) *((*itr)->getStringValue()) // Gets token identifier as std::string
+
+
 Parser::Parser(Scope* scope)
 {
         this->scope = scope;
@@ -51,7 +55,7 @@ bool Parser::AddSymbol_Helper(std::list<token_t>::iterator *itr, bool global, sy
 
         if( success == true){
                 // Error Symbol already exists
-                error_printf( *itr, "%s redefined \n", (*((*itr)->getStringValue())).c_str());
+                error_printf( *itr, "%s redefined \n", get_c_string(itr));
                 return false;
         }
 
@@ -889,7 +893,7 @@ bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global, symbo
                 if ( temp_symbol.type == ST_TYPE){
                         *symbol = temp_symbol;
                 }else{
-                        error_printf( *itr, "Symbol %s is not a type\n", (*((*itr)->getStringValue())).c_str() );
+                        error_printf( *itr, "Symbol %s is not a type\n", get_c_string(itr) );
                 }
 
                 this->next_token(itr); // Move to next token
