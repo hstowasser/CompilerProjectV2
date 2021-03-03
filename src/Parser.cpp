@@ -29,7 +29,7 @@ Parser::~Parser()
 {
 }
 
-void Parser::inc_ptr(std::list<token_t>::iterator *itr)
+void Parser::next_token(std::list<token_t>::iterator *itr)
 {
         debug_print_token(**itr);
         if (*itr != this->itr_end) {
@@ -51,7 +51,7 @@ bool Parser::parseProgram(std::list<token_t>::iterator *itr)
 
         // check for period
         if ((*itr)->type == T_SYM_PERIOD){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 error_printf( *itr, "Expected Period \n");
                 return false;
@@ -69,7 +69,7 @@ bool Parser::parseProgramBody(std::list<token_t>::iterator *itr)
         while ( this->parseDeclaration(itr) ){
                 // check for ;
                 if ((*itr)->type == T_SYM_SEMICOLON){
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                 }else{
                         error_printf( *itr, "Expected Semicolon \n");
                         return false;
@@ -78,7 +78,7 @@ bool Parser::parseProgramBody(std::list<token_t>::iterator *itr)
 
         // check for "begin"
         if ((*itr)->type == T_RW_BEGIN){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 error_printf( *itr, "Expected \"begin\" in program body \n");
                 return false;
@@ -88,7 +88,7 @@ bool Parser::parseProgramBody(std::list<token_t>::iterator *itr)
         while ( this->parseStatement(itr) ){
                 // check for ;
                 if ((*itr)->type == T_SYM_SEMICOLON){
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                 }else{
                         error_printf( *itr, "Expected Semicolon \n");
                         return false;
@@ -97,10 +97,10 @@ bool Parser::parseProgramBody(std::list<token_t>::iterator *itr)
 
         // check for "end" "program"
         if ((*itr)->type == T_RW_END){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
 
                 if ((*itr)->type == T_RW_PROGRAM){
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                         ret = true; // TODO Check that this is correct
                 }else{
                         error_printf( *itr, "Expected \"end program\" \n");
@@ -132,7 +132,7 @@ bool Parser::parseDestination(std::list<token_t>::iterator *itr, type_holder_t* 
                         return false;
                 }
 
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
                 ret = true;
         }else{
                 return false; // Not a valid destination
@@ -142,7 +142,7 @@ bool Parser::parseDestination(std::list<token_t>::iterator *itr, type_holder_t* 
         // if open bracket
         if ((*itr)->type == T_SYM_LBRACKET){
 
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
 
                 type_holder_t expr_type;
 
@@ -161,7 +161,7 @@ bool Parser::parseDestination(std::list<token_t>::iterator *itr, type_holder_t* 
 
                 // check close bracket
                 if ((*itr)->type == T_SYM_RBRACKET){
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                 }else{
                         error_printf( *itr, "Expected closing bracket \n");
                         return false;
@@ -186,7 +186,7 @@ bool Parser::parseAssignmentStatement(std::list<token_t>::iterator *itr)
 
         // check for assignment op :=
         if ((*itr)->type == T_OP_ASIGN_EQUALS){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 error_printf( *itr, "Expected \":=\" \n");
                 return false;
@@ -234,13 +234,13 @@ bool Parser::parseIfStatement(std::list<token_t>::iterator *itr)
         bool ret = false;
 
         if ((*itr)->type == T_RW_IF){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 return false; //Not an if statement
         }
 
         if ((*itr)->type == T_SYM_LPAREN){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 error_printf( *itr, "Expected \"(\" after IF \n");
                 return false;
@@ -252,14 +252,14 @@ bool Parser::parseIfStatement(std::list<token_t>::iterator *itr)
         }
 
         if ((*itr)->type == T_SYM_RPAREN){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 error_printf( *itr, "Expected \")\" before THEN \n");
                 return false;
         }
 
         if ((*itr)->type == T_RW_THEN){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 error_printf( *itr, "Expected THEN \n");
                 return false;
@@ -269,7 +269,7 @@ bool Parser::parseIfStatement(std::list<token_t>::iterator *itr)
         while ( this->parseStatement(itr) ){
                 // check for ;
                 if ((*itr)->type == T_SYM_SEMICOLON){
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                 }else{
                         error_printf( *itr, "Expected semicolon \n");
                         return false;
@@ -278,13 +278,13 @@ bool Parser::parseIfStatement(std::list<token_t>::iterator *itr)
 
         // if "else"
         if ((*itr)->type == T_RW_ELSE){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
 
                 // parse statements
                 while ( this->parseStatement(itr) ){
                         // check for ;
                         if ((*itr)->type == T_SYM_SEMICOLON){
-                                this->inc_ptr(itr); // Move to next token
+                                this->next_token(itr); // Move to next token
                         }else{
                                 error_printf( *itr, "Expected semicolon \n");
                                 return false;
@@ -293,10 +293,10 @@ bool Parser::parseIfStatement(std::list<token_t>::iterator *itr)
         }
 
         if ((*itr)->type == T_RW_END){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
 
                 if ((*itr)->type == T_RW_IF){
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                 }else{
                         error_printf( *itr, "Expected \"END IF\" \n");
                         return false;
@@ -315,13 +315,13 @@ bool Parser::parseLoopStatement(std::list<token_t>::iterator *itr)
         bool ret = false;
 
         if ((*itr)->type == T_RW_FOR){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 return false; //Not a for statement
         }
 
         if ((*itr)->type == T_SYM_LPAREN){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 error_printf( *itr, "Expected \"(\" after FOR \n");
                 return false;
@@ -333,7 +333,7 @@ bool Parser::parseLoopStatement(std::list<token_t>::iterator *itr)
         }
 
         if ((*itr)->type == T_SYM_SEMICOLON){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 error_printf( *itr, "Expected semicolon \n");
                 return false;
@@ -345,7 +345,7 @@ bool Parser::parseLoopStatement(std::list<token_t>::iterator *itr)
         }
 
         if ((*itr)->type == T_SYM_RPAREN){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 error_printf( *itr, "Expected \")\" \n");
                 return false;
@@ -355,7 +355,7 @@ bool Parser::parseLoopStatement(std::list<token_t>::iterator *itr)
         while ( this->parseStatement(itr) ){
                 // check for ;
                 if ((*itr)->type == T_SYM_SEMICOLON){
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                 }else{
                         error_printf( *itr, "Expected semicolon \n");
                         return false;
@@ -364,10 +364,10 @@ bool Parser::parseLoopStatement(std::list<token_t>::iterator *itr)
 
 
         if ((*itr)->type == T_RW_END){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
 
                 if ((*itr)->type == T_RW_FOR){
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                 }else{
                         error_printf( *itr, "Expected \"END FOR\" \n");
                         return false;
@@ -386,7 +386,7 @@ bool Parser::parseReturnStatement(std::list<token_t>::iterator *itr)
         bool ret = false;
 
         if ((*itr)->type == T_RW_RETURN){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 return false; // Not a return statement
         }
@@ -421,7 +421,7 @@ bool Parser::parseDeclaration(std::list<token_t>::iterator *itr)
         bool global = false;
 
         if ((*itr)->type == T_RW_GLOBAL){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
                 global = true;
         }
 
@@ -445,7 +445,7 @@ bool Parser::parseProcedureBody(std::list<token_t>::iterator *itr)
         while ( this->parseDeclaration(itr) ){
                 // check for ;
                 if ((*itr)->type == T_SYM_SEMICOLON){
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                 }else{
                         error_printf( *itr, "Expected semicolon \n");
                         return false;
@@ -454,7 +454,7 @@ bool Parser::parseProcedureBody(std::list<token_t>::iterator *itr)
 
         // check for "begin"
         if ((*itr)->type == T_RW_BEGIN){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 error_printf( *itr, "Expected \"BEGIN\" in procedure body \n");
                 return false;
@@ -464,7 +464,7 @@ bool Parser::parseProcedureBody(std::list<token_t>::iterator *itr)
         while ( this->parseStatement(itr) ){
                 // check for ;
                 if ((*itr)->type == T_SYM_SEMICOLON){
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                 }else{
                         error_printf( *itr, "Expected semicolon \n");
                         return false;
@@ -473,10 +473,10 @@ bool Parser::parseProcedureBody(std::list<token_t>::iterator *itr)
 
         // check for "end" "procedure"
         if ((*itr)->type == T_RW_END){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
 
                 if ((*itr)->type == T_RW_PROCEDURE){
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                         ret = true; // TODO Check that this is correct
                 }else{
                         error_printf( *itr, "Expected \"END PROCEDURE\" \n");
@@ -518,7 +518,7 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
 
         // check for "procedure"
         if ((*itr)->type == T_RW_PROCEDURE){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 return false; // Not a procedure header
         }
@@ -528,7 +528,7 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
                 symbol.type = ST_PROCEDURE;
                 name = *(*itr)->getStringValue();
 
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 error_printf( *itr, "Expected identifier after \"PROCEDURE\" \n");
                 return false;
@@ -536,7 +536,7 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
 
         // check colon
         if ((*itr)->type == T_SYM_COLON){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 error_printf( *itr, "Expected colon \n");
                 return false;
@@ -550,12 +550,12 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
 
         // check lparen, parseParameterList, check rparen
         if ((*itr)->type == T_SYM_LPAREN){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
 
                 ret = this->parseParameterList(itr, global, &symbol);
 
                 if ((*itr)->type == T_SYM_RPAREN){
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                 } else {
                         error_printf( *itr, "Expected closing parentheses after procedure parameters \n");
                         return false;
@@ -590,7 +590,7 @@ bool Parser::parseParameterList(std::list<token_t>::iterator *itr, bool global /
         do{
                 if (!first){
                         // Skip comma
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                 }
                 ret = this->parseParameter(itr, global, &temp_parameter_type); // TODO Test type tracking
                 temp_param_list.push_back(temp_parameter_type);
@@ -629,7 +629,7 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
 
         // check for "variable"
         if ((*itr)->type == T_RW_VARIABLE){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 return false; // Not a variable declaration
         }
@@ -639,7 +639,7 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
                 symbol.type = ST_VARIABLE;
                 name = *(*itr)->getStringValue();
 
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 error_printf( *itr, "Expected identifier after \"VARIABLE\" \n");
                 return false;
@@ -647,7 +647,7 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
 
         // check for colon
         if ((*itr)->type == T_SYM_COLON){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 error_printf( *itr, "Expected colon in variable declaration \n");
                 return false;
@@ -666,11 +666,11 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
 
         // check for open bracket
         if ((*itr)->type == T_SYM_LBRACKET){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
 
                 // parse bound
                 if ((*itr)->type == T_CONST_INTEGER){
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                 }else{
                         error_printf( *itr, "Expected bound inside of [] \n");
                         return false;
@@ -678,7 +678,7 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
 
                 // check for close bracket
                 if ((*itr)->type == T_SYM_RBRACKET){
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                 }else{
                         error_printf( *itr, "Expected closing bracket \n");
                         return false;
@@ -703,7 +703,7 @@ bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global
 
         // check "type" tag
         if ((*itr)->type == T_RW_TYPE){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 return false; // not an error, just not a type
         }
@@ -713,7 +713,7 @@ bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global
                 symbol.type = ST_TYPE;
                 name = *(*itr)->getStringValue();
                 
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 error_printf( *itr, "Expected identifier after  \"TYPE\" \n");
                 return false;
@@ -721,7 +721,7 @@ bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global
 
         // check "is" tag
         if ((*itr)->type == T_RW_IS){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 error_printf( *itr, "Expected \"IS\" after type identifier \n");
                 return false;
@@ -750,7 +750,7 @@ bool Parser::parseTypeDef(std::list<token_t>::iterator *itr, bool global /*= fal
         if (((*itr)->type == T_RW_ENUM)){ // if enum
                 symbol->variable_type.type = T_RW_INTEGER;
 
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
 
                 // check for LPAREN
                 if ((*itr)->type == T_SYM_LBRACE){
@@ -763,7 +763,7 @@ bool Parser::parseTypeDef(std::list<token_t>::iterator *itr, bool global /*= fal
                 // loop through enum identifiers
                 unsigned int e_index = 0;
                 do{
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
 
                         // Check identifier
                         if ((*itr)->type == T_IDENTIFIER){
@@ -777,7 +777,7 @@ bool Parser::parseTypeDef(std::list<token_t>::iterator *itr, bool global /*= fal
                                 }else{
                                         this->scope->AddSymbol(*(*itr)->getStringValue(), temp_symbol);
                                 }
-                                this->inc_ptr(itr); // Move to next token                       
+                                this->next_token(itr); // Move to next token                       
                         }else{
                                 error_printf( *itr, "Expected identifier in \"ENUM\" declaration \n");
                                 return false;
@@ -788,7 +788,7 @@ bool Parser::parseTypeDef(std::list<token_t>::iterator *itr, bool global /*= fal
 
                 // check for RPAREN
                 if ((*itr)->type == T_SYM_RBRACE){
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                         ret = true;
                 }else{
                         error_printf( *itr, "Expected closing brace after \"ENUM\" declaration \n");
@@ -831,7 +831,7 @@ bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global /*= fa
             ((*itr)->type == T_RW_STRING) ||
             ((*itr)->type == T_RW_BOOL))
         {
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
                 ret = true;
         }else if ((*itr)->type == T_IDENTIFIER){
                 // Check symbol table for type. If exists set symbol->variable_type.ptr
@@ -845,7 +845,7 @@ bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global /*= fa
                         return false;
                 }
 
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
                 ret = true;
         }else {
                 return false;
@@ -860,7 +860,7 @@ bool Parser::parseProgramHeader(std::list<token_t>::iterator *itr)
         bool ret = false;
         // check for program tag
         if ((*itr)->type == T_RW_PROGRAM){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 error_printf( *itr, "Code must start with \"PROGRAM\" definition\n");
                 return false;
@@ -871,7 +871,7 @@ bool Parser::parseProgramHeader(std::list<token_t>::iterator *itr)
                 // Create scope for program
                 this->scope->PushScope(*(*itr)->getStringValue());
 
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else{
                 error_printf( *itr, "Expected identifier after \"PROGRAM\" \n");
                 return false;
@@ -879,7 +879,7 @@ bool Parser::parseProgramHeader(std::list<token_t>::iterator *itr)
 
         // check for "is"
         if ((*itr)->type == T_RW_IS){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
                 ret = true;
         }else{
                 error_printf( *itr, "Expected \"IS\" after program identifier \n");
@@ -919,7 +919,7 @@ bool Parser::parseExpression(std::list<token_t>::iterator *itr, type_holder_t* p
 
         // check for not
         if ((*itr)->type == T_OP_LOGI_NOT){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }
         
         ret = this->parseArithOp(itr, &temp_arithop); // TODO add type checking
@@ -928,7 +928,7 @@ bool Parser::parseExpression(std::list<token_t>::iterator *itr, type_holder_t* p
                     ((*itr)->type == T_OP_LOGI_OR))
                 {
                         // Then it's an Expression?
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                         ret = this->parseExpression(itr, &temp_expression);
 
                         if (parameter_type != NULL) {
@@ -967,7 +967,7 @@ bool Parser::parseArithOp(std::list<token_t>::iterator *itr, type_holder_t* para
                     ((*itr)->type == T_OP_ARITH_PLUS))
                 {
                         // Then it's an ArithOp?
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                         ret = this->parseArithOp(itr, &temp_arithop);
 
                         if (type_holder_cmp(temp_relation, temp_arithop)){
@@ -1012,7 +1012,7 @@ bool Parser::parseRelation(std::list<token_t>::iterator *itr, type_holder_t* par
                     ((*itr)->type == T_OP_REL_NOT_EQUAL))
                 {
                         // Then it's a relation?
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                         ret = this->parseRelation(itr, &temp_relation);
 
                         if (type_holder_cmp(temp_relation, temp_term)){
@@ -1064,7 +1064,7 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr, type_holder_t
                         return false;
                 }
 
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
         }else {
                 // Should never reach here
                 ret = false;
@@ -1073,11 +1073,11 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr, type_holder_t
 
 
         if ((*itr)->type == T_SYM_LPAREN){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
                 
                 if ((*itr)->type == T_SYM_RPAREN){
                         // Procedure call has no arguments
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                         ret = true;
                 }else{
                         ret = this->parseArgumentList(itr);
@@ -1086,7 +1086,7 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr, type_holder_t
                         }
 
                         if ((*itr)->type == T_SYM_RPAREN){
-                                this->inc_ptr(itr); // Move to next token
+                                this->next_token(itr); // Move to next token
                                 // ret = true; // ret should already be set to true by parseArg
                         }else{
                                 error_printf( *itr, "Expected closing parentheses after argument list \n");
@@ -1112,7 +1112,7 @@ bool Parser::parseArgumentList(std::list<token_t>::iterator *itr)
 
         // if comma, keep parsing Argument List
         if ((*itr)->type == T_SYM_COMMA){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
 
                 //Parse ArgumentList
                 ret = this->parseArgumentList(itr);
@@ -1133,7 +1133,7 @@ bool Parser::parseTerm(std::list<token_t>::iterator *itr, type_holder_t* paramet
                     ((*itr)->type == T_OP_TERM_MULTIPLY))
                 {
                         // Then it's a term?
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                         ret = this->parseTerm(itr, &temp_term);
 
                         if (type_holder_cmp(temp_factor, temp_term)){
@@ -1175,7 +1175,7 @@ bool Parser::parseName(std::list<token_t>::iterator *itr, type_holder_t* paramet
                         return false;
                 }
 
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
                 ret = true;
         }else {
                 ret = false; // Should never reach here
@@ -1184,7 +1184,7 @@ bool Parser::parseName(std::list<token_t>::iterator *itr, type_holder_t* paramet
 
         if ((*itr)->type == T_SYM_LBRACKET){
                 // parse expression
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
                 type_holder_t expr_type;
                 ret = this->parseExpression(itr, &expr_type);
                 if ( ret == false){
@@ -1194,7 +1194,7 @@ bool Parser::parseName(std::list<token_t>::iterator *itr, type_holder_t* paramet
                 }
 
                 if ((*itr)->type == T_SYM_RBRACKET){
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                         // ret = true; // ret should already be set to true by parseExpression
                 }else{
                         ret = false;
@@ -1215,28 +1215,28 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr, type_holder_t* param
         bool ret = false;
         // Check for L_Paren
         if ((*itr)->type == T_SYM_LPAREN){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
                 ret = this->parseExpression(itr, parameter_type);
                 if ((*itr)->type == T_SYM_RPAREN){
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                 }else{
                         error_printf( *itr, "Expected closing parentheses \n");
                         ret = false;
                 }
         }else if ((*itr)->type == T_RW_TRUE){
                 parameter_type->type = T_RW_BOOL;
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
                 ret = true;
         }else if ((*itr)->type == T_RW_FALSE){
                 parameter_type->type = T_RW_BOOL;
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
                 ret = true;
         }else if ((*itr)->type == T_CONST_STRING){
                 parameter_type->type = T_RW_STRING;
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
                 ret = true;
         }else if ((*itr)->type == T_OP_ARITH_MINUS){
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
                 if ((*itr)->type == T_CONST_INTEGER ||
                     (*itr)->type == T_CONST_FLOAT){
                         if ((*itr)->type == T_CONST_INTEGER){
@@ -1244,7 +1244,7 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr, type_holder_t* param
                         }else{
                                 parameter_type->type = T_RW_FLOAT;
                         }
-                        this->inc_ptr(itr); // Move to next token
+                        this->next_token(itr); // Move to next token
                         ret = true;
                 } else if (!ret){
                         ret = this->parseName(itr, parameter_type);
@@ -1257,13 +1257,13 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr, type_holder_t* param
                 }else{
                         parameter_type->type = T_RW_FLOAT;
                 }
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
                 ret = true;
         }else if ((*itr)->type == T_IDENTIFIER){
                 std::list<token_t>::iterator temp_itr = *itr;
 
                 // Peek ahead to check if it is a procedure call
-                this->inc_ptr(itr); // Move to next token
+                this->next_token(itr); // Move to next token
                 if ((*itr)->type != T_SYM_LPAREN){
                         // Move pointer back to original position
                         *itr = temp_itr;

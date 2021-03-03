@@ -47,7 +47,7 @@ private:
         
 
         
-        void inc_ptr(std::list<token_t>::iterator *itr);
+        void next_token(std::list<token_t>::iterator *itr);
         std::list<token_t>::iterator itr_end;
 
         Scope* scope;
