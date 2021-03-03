@@ -58,7 +58,9 @@ public:
         void PushScope(std::string);
         void PopScope();
 
-        std::map<std::string,symbol_t>::iterator Find(std::string, bool* success); //returns 
+        std::map<std::string,symbol_t>::iterator FindLocal(std::string, bool* success);
+        std::map<std::string,symbol_t>::iterator FindGlobal(std::string, bool* success);
+        std::map<std::string,symbol_t>::iterator Find(std::string, bool* success); // Searches local first then global
 
         // void SetValueType(std::string, );
 

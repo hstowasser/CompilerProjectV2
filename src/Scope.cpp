@@ -135,22 +135,28 @@ void Scope::AddGlobalSymbol(std::string name, symbol_t symbol)
     this->global_symbol_table[name] = symbol;
 }
 
-std::map<std::string,symbol_t>::iterator Scope::Find(std::string name, bool* success){
+std::map<std::string,symbol_t>::iterator Scope::FindLocal(std::string name, bool* success)
+{
     std::map<std::string,symbol_t>::iterator ret;
     ret = this->symbol_tables[this->current_scope_name].find(name);
+    *success = !(ret == this->symbol_tables[this->current_scope_name].end());
+    return ret;
+}
 
-    // Note: For whatever reason, the strings from tokens have an extra null termination.
-    
-    if (ret != this->symbol_tables[this->current_scope_name].end()){
-        *success = true;
-    }else{
-        ret = this->global_symbol_table.find(name);
-        if (ret == this->global_symbol_table.end())
-        {
-            *success = false;
-        }else{
-            *success = true;
-        }
+std::map<std::string,symbol_t>::iterator Scope::FindGlobal(std::string name, bool* success)
+{
+    std::map<std::string,symbol_t>::iterator ret;
+    ret = this->global_symbol_table.find(name);
+    *success = !(ret == this->global_symbol_table.end());
+    return ret;
+}
+
+std::map<std::string,symbol_t>::iterator Scope::Find(std::string name, bool* success){
+    std::map<std::string,symbol_t>::iterator ret;
+    ret = this->FindLocal(name, success);
+
+    if (*success == false){
+        ret = this->FindGlobal(name, success);
     }
     return ret;
 }
