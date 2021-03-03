@@ -18,7 +18,7 @@ private:
         bool parseLoopStatement(std::list<token_t>::iterator *itr);
         bool parseReturnStatement(std::list<token_t>::iterator *itr);
 
-        bool parseDestination(std::list<token_t>::iterator *itr, type_holder_t* parameter_type = NULL);
+        bool parseDestination(std::list<token_t>::iterator *itr, type_holder_t* parameter_type);
 
         bool parseProcedureHeader(std::list<token_t>::iterator *itr, bool global);
         bool parseProcedureBody(std::list<token_t>::iterator *itr);
@@ -46,6 +46,7 @@ private:
         bool parseArgumentList(std::list<token_t>::iterator *itr);
         
         bool AddSymbol_Helper(std::list<token_t>::iterator *itr, bool global, symbol_t symbol);
+        bool FindVariableType_Helper(std::list<token_t>::iterator *itr, type_holder_t* parameter_type);
 
         
         void next_token(std::list<token_t>::iterator *itr);

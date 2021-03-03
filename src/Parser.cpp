@@ -64,6 +64,19 @@ bool Parser::AddSymbol_Helper(std::list<token_t>::iterator *itr, bool global, sy
         return true;
 }
 
+bool Parser::FindVariableType_Helper(std::list<token_t>::iterator *itr, type_holder_t* parameter_type)
+{
+    bool success;
+    std::map<std::string,symbol_t>::iterator temp;
+    temp = this->scope->Find(*((*itr)->getStringValue()), &success);
+    if (success){
+            *parameter_type = temp->second.variable_type;
+    } else {
+            error_printf( *itr, "Symbol %s is not defined \n",(*itr)->getStringValue()->c_str());
+    }
+    return success;
+}
+
 bool Parser::parseProgram(std::list<token_t>::iterator *itr)
 {
         debug_print_call();
@@ -139,7 +152,7 @@ bool Parser::parseProgramBody(std::list<token_t>::iterator *itr)
         return ret;
 }
 
-bool Parser::parseDestination(std::list<token_t>::iterator *itr, type_holder_t* parameter_type /*= NULL*/)
+bool Parser::parseDestination(std::list<token_t>::iterator *itr, type_holder_t* parameter_type)
 {
         debug_print_call();
         bool ret = false;
@@ -147,18 +160,12 @@ bool Parser::parseDestination(std::list<token_t>::iterator *itr, type_holder_t* 
         // check identifier
         if ((*itr)->type == T_IDENTIFIER){
                 // Look up in symbol table and return type
-                bool success;
-                std::map<std::string,symbol_t>::iterator temp;
-                temp = this->scope->Find(*((*itr)->getStringValue()), &success);
-                if (success){
-                        *parameter_type = temp->second.variable_type;
-                } else {
-                        error_printf( *itr, "Destination %s is not defined \n",(*itr)->getStringValue()->c_str());
+                ret = this->FindVariableType_Helper(itr, parameter_type);
+                if( !ret){
                         return false;
                 }
 
                 this->next_token(itr); // Move to next token
-                ret = true;
         }else{
                 return false; // Not a valid destination
         }
