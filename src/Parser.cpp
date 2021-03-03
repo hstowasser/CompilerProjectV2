@@ -1254,8 +1254,11 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr, type_holder_t* param
 {
         debug_print_call();
         bool ret = false;
+        std::list<token_t>::iterator temp_itr = *itr; // Only used in case T_IDENTIFIER
+
         // Check for L_Paren
-        if ((*itr)->type == T_SYM_LPAREN){
+        switch ((*itr)->type){
+        case T_SYM_LPAREN:
                 this->next_token(itr); // Move to next token
                 ret = this->parseExpression(itr, parameter_type);
                 if ((*itr)->type == T_SYM_RPAREN){
@@ -1264,19 +1267,23 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr, type_holder_t* param
                         error_printf( *itr, "Expected closing parentheses \n");
                         ret = false;
                 }
-        }else if ((*itr)->type == T_RW_TRUE){
+                break;
+        case T_RW_TRUE:
                 parameter_type->type = T_RW_BOOL;
                 this->next_token(itr); // Move to next token
                 ret = true;
-        }else if ((*itr)->type == T_RW_FALSE){
+                break;
+        case T_RW_FALSE:
                 parameter_type->type = T_RW_BOOL;
                 this->next_token(itr); // Move to next token
                 ret = true;
-        }else if ((*itr)->type == T_CONST_STRING){
+                break;
+        case T_CONST_STRING:
                 parameter_type->type = T_RW_STRING;
                 this->next_token(itr); // Move to next token
                 ret = true;
-        }else if ((*itr)->type == T_OP_ARITH_MINUS){
+                break;
+        case T_OP_ARITH_MINUS:
                 this->next_token(itr); // Move to next token
                 if ((*itr)->type == T_CONST_INTEGER ||
                     (*itr)->type == T_CONST_FLOAT){
@@ -1290,18 +1297,18 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr, type_holder_t* param
                 } else if (!ret){
                         ret = this->parseName(itr, parameter_type);
                 }
-        }else if ((*itr)->type == T_CONST_INTEGER ||
-                 (*itr)->type == T_CONST_FLOAT){
-
-                if ((*itr)->type == T_CONST_INTEGER){
-                        parameter_type->type = T_RW_INTEGER;
-                }else{
-                        parameter_type->type = T_RW_FLOAT;
-                }
+                break;
+        case T_CONST_INTEGER:
+                parameter_type->type = T_RW_INTEGER;
                 this->next_token(itr); // Move to next token
                 ret = true;
-        }else if ((*itr)->type == T_IDENTIFIER){
-                std::list<token_t>::iterator temp_itr = *itr;
+                break;
+        case T_CONST_FLOAT:
+                parameter_type->type = T_RW_FLOAT;
+                this->next_token(itr); // Move to next token
+                ret = true;
+                break;
+        case T_IDENTIFIER:
 
                 // Peek ahead to check if it is a procedure call
                 this->next_token(itr); // Move to next token
@@ -1315,7 +1322,8 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr, type_holder_t* param
                         *itr = temp_itr;
                         ret = this->parseProcedureCall(itr, parameter_type);
                 }
-        }else{
+                break;
+        default:
                 error_printf( *itr, "Invalid Factor \n");
                 ret = false;
         }
