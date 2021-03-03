@@ -119,13 +119,23 @@ bool Parser::parseProgramBody(std::list<token_t>::iterator *itr)
         return ret;
 }
 
-bool Parser::parseDestination(std::list<token_t>::iterator *itr)
+bool Parser::parseDestination(std::list<token_t>::iterator *itr, type_holder_t* parameter_type /*= NULL*/)
 {
         debug_print_call();
         bool ret = false;
 
         // check identifier
         if ((*itr)->type == T_IDENTIFIER){
+                // Look up in symbol table and return type
+                bool success;
+                std::map<std::string,symbol_t>::iterator temp;
+                temp = this->scope->Find(*((*itr)->getStringValue()), &success);
+                if (success){
+                        *parameter_type = temp->second.variable_type;
+                } else {
+                        error_printf( *itr, "Destination %s is not defined \n",(*itr)->getStringValue()->c_str());
+                        return false;
+                }
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
                 ret = true;
@@ -139,11 +149,20 @@ bool Parser::parseDestination(std::list<token_t>::iterator *itr)
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
 
+                type_holder_t expr_type;
+
                 // then parse expression
-                ret = this->parseExpression(itr);
+                ret = this->parseExpression(itr, &expr_type); // Todo check that this is an integer
                 if ( !ret ){
                         return false;
                 }
+
+                if ( expr_type.type != T_RW_INTEGER && expr_type.type != T_RW_ENUM){
+                        error_printf( *itr, "Array index is invalid type \n");
+                        return false;
+                }
+
+                
 
                 // check close bracket
                 if ((*itr)->type == T_SYM_RBRACKET){
@@ -163,8 +182,10 @@ bool Parser::parseAssignmentStatement(std::list<token_t>::iterator *itr)
 {
         debug_print_call();
         bool ret = false;
+        type_holder_t dest_type;
+        type_holder_t expr_type;
 
-        ret = this->parseDestination(itr);
+        ret = this->parseDestination(itr, &dest_type);
         if (!ret){
                 return false; // Not an assignment statement
         }
@@ -178,8 +199,38 @@ bool Parser::parseAssignmentStatement(std::list<token_t>::iterator *itr)
                 return false;
         }
 
+        // TODO for array assignments check that lengths are the same
+
         // parse expression
-        ret = this->parseExpression(itr); // TODO check that destination type matches expression type
+        ret = this->parseExpression(itr, &expr_type); 
+        if (!ret){
+                return false;
+        }
+
+        if (dest_type.type == T_RW_ENUM){
+                dest_type.type = T_RW_INTEGER; // Enums treated as integers
+        }
+
+        if (dest_type.type == T_RW_ENUM){
+                expr_type.type = T_RW_INTEGER; // Enums treated as integers
+        }
+
+        // Check that destination type matches expression type
+        if (type_holder_cmp(dest_type, expr_type)){
+                // Both are the same
+                
+        } else if ( ((expr_type.type == T_RW_INTEGER) || (expr_type.type == T_RW_FLOAT)) &&
+                ((dest_type.type == T_RW_INTEGER) || (dest_type.type == T_RW_FLOAT))) {
+                // Combinations of int and float are allowed
+                
+        } else if ( ((expr_type.type == T_RW_INTEGER) || (expr_type.type == T_RW_BOOL)) &&
+                ((dest_type.type == T_RW_INTEGER) || (dest_type.type == T_RW_BOOL))) {
+                // Combinations of int and bool are allowed
+                
+        } else {
+                error_printf( *itr, "Types do not match \n"); // TODO print types
+                return false;
+        }
 
         return ret; 
 }
@@ -742,6 +793,8 @@ bool Parser::parseTypeDef(std::list<token_t>::iterator *itr, bool global /*= fal
         bool ret = false;
 
         if (((*itr)->type == T_RW_ENUM)){ // if enum
+                symbol->variable_type.type = T_RW_INTEGER;
+
                 debug_print_token(**itr);
                 this->inc_ptr(itr); // Move to next token
 
@@ -764,6 +817,7 @@ bool Parser::parseTypeDef(std::list<token_t>::iterator *itr, bool global /*= fal
                                 // Add to symbol table with associated index
                                 symbol_t temp_symbol;
                                 temp_symbol.type = ST_ENUM_CONST;
+                                temp_symbol.variable_type.type = T_RW_INTEGER; // individual enum value treated as integer
                                 temp_symbol.enum_index = e_index; // Integer value of the enum
                                 if (global){
                                         this->scope->AddGlobalSymbol(*(*itr)->getStringValue(), temp_symbol);

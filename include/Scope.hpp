@@ -27,11 +27,11 @@ typedef struct _type_holder_t{
 } type_holder_t;
 
 typedef struct _symbol_t{
+        // TODO add something to track if it is an array, hold length
         SymbolType_e type;
         type_holder_t variable_type; // Could also double as function return type
         unsigned int enum_index; // for ST_ENUM_CONST
 
-        // TODO what to do with function parameters. Will need to allocate memory
         unsigned int parameter_ct = 0;
         type_holder_t * parameter_type_arr = NULL; // Will need to account for memory leak
 } symbol_t;

@@ -18,7 +18,7 @@ private:
         bool parseLoopStatement(std::list<token_t>::iterator *itr);
         bool parseReturnStatement(std::list<token_t>::iterator *itr);
 
-        bool parseDestination(std::list<token_t>::iterator *itr);
+        bool parseDestination(std::list<token_t>::iterator *itr, type_holder_t* parameter_type = NULL);
 
         bool parseProcedureHeader(std::list<token_t>::iterator *itr, bool global);
         bool parseProcedureBody(std::list<token_t>::iterator *itr);
@@ -39,7 +39,7 @@ private:
         bool parseArithOp(std::list<token_t>::iterator *itr, type_holder_t* parameter_type);
         bool parseFactor(std::list<token_t>::iterator *itr, type_holder_t* parameter_type);
         bool parseTerm(std::list<token_t>::iterator *itr, type_holder_t* parameter_type);
-        bool parseName(std::list<token_t>::iterator *itr, type_holder_t* parameter_type);
+        bool parseName(std::list<token_t>::iterator *itr, type_holder_t* parameter_type); // TODO how to track array types?
         bool parseProcedureCall(std::list<token_t>::iterator *itr, type_holder_t* parameter_type);
         
         bool parseArgumentList(std::list<token_t>::iterator *itr);
