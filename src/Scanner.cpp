@@ -268,10 +268,10 @@ void Scanner::parseSymbol(FileReader *reader, token_t *token)
                 }
                 break;
         case '&':
-                token->type = T_OP_LOGI_AND;
+                token->type = T_OP_BITW_AND;
                 break;
         case '|':
-                token->type = T_OP_LOGI_OR;
+                token->type = T_OP_BITW_OR;
                 break;
         case '*':
                 token->type = T_OP_TERM_MULTIPLY;

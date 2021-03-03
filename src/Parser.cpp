@@ -968,39 +968,42 @@ bool Parser::parseExpression(std::list<token_t>::iterator *itr, type_holder_t* p
         type_holder_t temp_expression;
 
         // check for not
-        if ((*itr)->type == T_OP_LOGI_NOT){
+        if ((*itr)->type == T_OP_BITW_NOT){
                 this->next_token(itr); // Move to next token
         }
         
         ret = this->parseArithOp(itr, &temp_arithop); // TODO add type checking
-        if (ret){
-                if (((*itr)->type == T_OP_LOGI_AND) ||
-                    ((*itr)->type == T_OP_LOGI_OR))
-                {
-                        // Then it's an Expression?
-                        this->next_token(itr); // Move to next token
-                        ret = this->parseExpression(itr, &temp_expression);
-
-                        if (parameter_type != NULL) {
-                                if (type_holder_cmp(temp_expression, temp_arithop)){
-                                        // Both are the same
-                                        *parameter_type = temp_arithop;
-                                } else if ( ((temp_expression.type == T_RW_INTEGER) || (temp_expression.type == T_RW_BOOL)) &&
-                                        ((temp_expression.type == T_RW_INTEGER) || (temp_expression.type == T_RW_BOOL))) {
-                                        // Combinations of int and bool are allowed
-                                        parameter_type->type = T_RW_BOOL; // Default to bool
-                                } else {
-                                        error_printf( *itr, "Types do not match \n"); // TODO print types
-                                        return false;
-                                }
-                        }
-                        
-                }else{
-                        if (parameter_type != NULL) {
-                                *parameter_type = temp_arithop;
-                        }                        
-                }
+        if (!ret){
+                return false;
         }
+
+        if (((*itr)->type == T_OP_BITW_AND) ||
+                ((*itr)->type == T_OP_BITW_OR))
+        {
+                // Then it's an Expression?
+                this->next_token(itr); // Move to next token
+                ret = this->parseExpression(itr, &temp_expression);
+
+                if (parameter_type != NULL) {
+                        if (type_holder_cmp(temp_expression, temp_arithop)){
+                                // Both are the same
+                                *parameter_type = temp_arithop;
+                        } else if ( ((temp_expression.type == T_RW_INTEGER) || (temp_expression.type == T_RW_BOOL)) &&
+                                ((temp_expression.type == T_RW_INTEGER) || (temp_expression.type == T_RW_BOOL))) {
+                                // Combinations of int and bool are allowed
+                                parameter_type->type = T_RW_BOOL; // Default to bool
+                        } else {
+                                error_printf( *itr, "Types do not match \n"); // TODO print types
+                                return false;
+                        }
+                }
+                
+        }else{
+                if (parameter_type != NULL) {
+                        *parameter_type = temp_arithop;
+                }                        
+        }
+
         return ret;
 }
 
@@ -1285,13 +1288,12 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr, type_holder_t* param
                 break;
         case T_OP_ARITH_MINUS:
                 this->next_token(itr); // Move to next token
-                if ((*itr)->type == T_CONST_INTEGER ||
-                    (*itr)->type == T_CONST_FLOAT){
-                        if ((*itr)->type == T_CONST_INTEGER){
-                                parameter_type->type = T_RW_INTEGER;
-                        }else{
-                                parameter_type->type = T_RW_FLOAT;
-                        }
+                if ((*itr)->type == T_CONST_INTEGER){
+                        parameter_type->type = T_RW_INTEGER;
+                        this->next_token(itr); // Move to next token
+                        ret = true;
+                } else if((*itr)->type == T_CONST_FLOAT){
+                        parameter_type->type = T_RW_FLOAT;
                         this->next_token(itr); // Move to next token
                         ret = true;
                 } else if (!ret){

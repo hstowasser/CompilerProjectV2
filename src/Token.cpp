@@ -28,12 +28,12 @@ const char * token_type_to_string(token_type_e token_type)
                 return "T_SYM_PERIOD";
         case T_SYM_COMMA:
                 return "T_SYM_COMMA";
-        case T_OP_LOGI_AND:
-                return "T_OP_LOGI_AND";
-        case T_OP_LOGI_OR:
-                return "T_OP_LOGI_OR";
-        case T_OP_LOGI_NOT:
-                return "T_OP_LOGI_NOT";
+        case T_OP_BITW_AND:
+                return "T_OP_BITW_AND";
+        case T_OP_BITW_OR:
+                return "T_OP_BITW_OR";
+        case T_OP_BITW_NOT:
+                return "T_OP_BITW_NOT";
         case T_OP_ASIGN_EQUALS:
                 return "T_OP_ASIGN_EQUALS";
         case T_OP_TERM_MULTIPLY:
