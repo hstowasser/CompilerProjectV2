@@ -48,9 +48,9 @@ bool Parser::AddSymbol_Helper(std::list<token_t>::iterator *itr, bool global, sy
         // Check if symbol already exists
         bool success;
         if (global){
-                this->scope->FindGlobal(*((*itr)->getStringValue()), &success);
+                this->scope->FindGlobal(get_string(itr), &success);
         }else{
-                this->scope->FindLocal(*((*itr)->getStringValue()), &success);
+                this->scope->FindLocal(get_string(itr), &success);
         }
 
         if( success == true){
@@ -71,11 +71,11 @@ bool Parser::FindVariableType_Helper(std::list<token_t>::iterator *itr, type_hol
 {
     bool success;
     std::map<std::string,symbol_t>::iterator temp;
-    temp = this->scope->Find(*((*itr)->getStringValue()), &success);
+    temp = this->scope->Find(get_string(itr), &success);
     if (success){
             *parameter_type = temp->second.variable_type;
     } else {
-            error_printf( *itr, "Symbol %s is not defined \n",(*itr)->getStringValue()->c_str());
+            error_printf( *itr, "Symbol %s is not defined \n", get_c_string(itr));
     }
     return success;
 }
@@ -84,11 +84,11 @@ bool Parser::FindSymbol_Helper(std::list<token_t>::iterator *itr, symbol_t* symb
 {
     bool success;
     std::map<std::string,symbol_t>::iterator temp;
-    temp = this->scope->Find(*((*itr)->getStringValue()), &success);
+    temp = this->scope->Find(get_string(itr), &success);
     if (success){
             *symbol = temp->second;
     } else {
-            error_printf( *itr, "Symbol %s is not defined \n",(*itr)->getStringValue()->c_str());
+            error_printf( *itr, "Symbol %s is not defined \n", get_c_string(itr));
     }
     return success;
 }
@@ -1104,7 +1104,7 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr, type_holder_t
                         if( temp_symbol.type == ST_PROCEDURE ){
                                 *parameter_type = temp_symbol.variable_type;
                         }else{
-                                error_printf( *itr, "Identifier %s is not callable \n",(*itr)->getStringValue()->c_str());
+                                error_printf( *itr, "Identifier %s is not callable \n", get_c_string(itr));
                                 return false;
                         }
                 } else {
