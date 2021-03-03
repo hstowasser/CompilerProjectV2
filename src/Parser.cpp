@@ -42,7 +42,6 @@ void Parser::next_token(std::list<token_t>::iterator *itr)
 bool Parser::AddSymbol_Helper(std::list<token_t>::iterator *itr, bool global, symbol_t symbol)
 {
         // Check if symbol already exists
-        // this->scope->Find()
         bool success;
         if (global){
                 this->scope->FindGlobal(*((*itr)->getStringValue()), &success);
@@ -71,6 +70,19 @@ bool Parser::FindVariableType_Helper(std::list<token_t>::iterator *itr, type_hol
     temp = this->scope->Find(*((*itr)->getStringValue()), &success);
     if (success){
             *parameter_type = temp->second.variable_type;
+    } else {
+            error_printf( *itr, "Symbol %s is not defined \n",(*itr)->getStringValue()->c_str());
+    }
+    return success;
+}
+
+bool Parser::FindSymbol_Helper(std::list<token_t>::iterator *itr, symbol_t* symbol)
+{
+    bool success;
+    std::map<std::string,symbol_t>::iterator temp;
+    temp = this->scope->Find(*((*itr)->getStringValue()), &success);
+    if (success){
+            *symbol = temp->second;
     } else {
             error_printf( *itr, "Symbol %s is not defined \n",(*itr)->getStringValue()->c_str());
     }
@@ -774,7 +786,7 @@ bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global
         return ret;
 }
 
-bool Parser::parseEnum(std::list<token_t>::iterator *itr, bool global /*= false*/, symbol_t* symbol /*= NULL*/)
+bool Parser::parseEnum(std::list<token_t>::iterator *itr, bool global, symbol_t* symbol)
 {
         debug_print_call();
         bool ret = true;
@@ -844,7 +856,7 @@ bool Parser::parseTypeDef(std::list<token_t>::iterator *itr, bool global /*= fal
  *      if it is called by parseTypeMark4
  * 
  */
-bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global /*= false*/, symbol_t* symbol /*= NULL*/)
+bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global, symbol_t* symbol)
 {
         debug_print_call();
         bool ret = false;
@@ -872,18 +884,15 @@ bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global /*= fa
                 ret = true;
         }else if ((*itr)->type == T_IDENTIFIER){
                 // Check symbol table for type. If exists set symbol->variable_type.ptr
-                bool success;
-                std::map<std::string,symbol_t>::iterator temp;
-                temp = this->scope->Find(*((*itr)->getStringValue()), &success);
-                if (success){
-                        symbol->variable_type.itr = temp;
-                } else {
-                        error_printf( *itr, "Type %s is not defined \n",(*itr)->getStringValue()->c_str());
-                        return false;
+                symbol_t temp_symbol;
+                ret = FindSymbol_Helper(itr, &temp_symbol);
+                if ( temp_symbol.type == ST_TYPE){
+                        *symbol = temp_symbol;
+                }else{
+                        error_printf( *itr, "Symbol %s is not a type\n", (*((*itr)->getStringValue())).c_str() );
                 }
 
                 this->next_token(itr); // Move to next token
-                ret = true;
         }else {
                 return false;
         }
@@ -1086,19 +1095,16 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr, type_holder_t
         if ((*itr)->type == T_IDENTIFIER){
                 // Check that identifier is defined as a procedure
                 // set parameter type to return type of procedure
-                bool success;
-                std::map<std::string,symbol_t>::iterator temp;
-                temp = this->scope->Find(*((*itr)->getStringValue()), &success);
-                if (success){
-                        if (temp->second.type == ST_PROCEDURE){
-                                *parameter_type = temp->second.variable_type;
+                symbol_t temp_symbol;
+                if (FindSymbol_Helper(itr, &temp_symbol)){
+                        if( temp_symbol.type == ST_PROCEDURE ){
+                                *parameter_type = temp_symbol.variable_type;
                         }else{
                                 error_printf( *itr, "Identifier %s is not callable \n",(*itr)->getStringValue()->c_str());
                                 return false;
-                        }                        
+                        }
                 } else {
-                        error_printf( *itr, "Procedure %s is not defined \n",(*itr)->getStringValue()->c_str());
-                        return false;
+                        return false; // Procedure not defined
                 }
 
                 this->next_token(itr); // Move to next token
@@ -1202,18 +1208,12 @@ bool Parser::parseName(std::list<token_t>::iterator *itr, type_holder_t* paramet
         if ((*itr)->type == T_IDENTIFIER){
                 // Lookup in symbol table.
                 // Set parameter_type
-                bool success;
-                std::map<std::string,symbol_t>::iterator temp;
-                temp = this->scope->Find(*((*itr)->getStringValue()), &success);
-                if (success){
-                        *parameter_type = temp->second.variable_type;
-                } else {
-                        error_printf( *itr, "Name %s is not defined \n",(*itr)->getStringValue()->c_str());
+                ret = FindVariableType_Helper(itr, parameter_type); // returns false if not found
+                if (!ret){
                         return false;
                 }
 
                 this->next_token(itr); // Move to next token
-                ret = true;
         }else {
                 ret = false; // Should never reach here
                 return ret;

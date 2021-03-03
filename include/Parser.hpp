@@ -47,6 +47,7 @@ private:
         
         bool AddSymbol_Helper(std::list<token_t>::iterator *itr, bool global, symbol_t symbol);
         bool FindVariableType_Helper(std::list<token_t>::iterator *itr, type_holder_t* parameter_type);
+        bool FindSymbol_Helper(std::list<token_t>::iterator *itr, symbol_t* symbol);
 
         
         void next_token(std::list<token_t>::iterator *itr);
