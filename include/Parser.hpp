@@ -28,9 +28,9 @@ private:
 
         bool parseProcedureDeclaration(std::list<token_t>::iterator *itr, bool global);
         bool parseVariableDeclaration(std::list<token_t>::iterator *itr, bool global, type_holder_t* parameter_type = NULL);
-        bool parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global);
+        //bool parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global);
 
-        bool parseTypeDef(std::list<token_t>::iterator *itr, bool global = false, symbol_t* symbol = NULL);
+        //bool parseTypeDef(std::list<token_t>::iterator *itr, bool global = false, symbol_t* symbol = NULL);
         bool parseTypeMark(std::list<token_t>::iterator *itr, bool global = false, symbol_t* symbol = NULL);
         bool parseEnum(std::list<token_t>::iterator *itr, bool global = false, symbol_t* symbol = NULL);
 

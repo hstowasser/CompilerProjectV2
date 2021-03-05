@@ -200,7 +200,7 @@ bool Parser::parseDestination(std::list<token_t>::iterator *itr, type_holder_t* 
                         return false;
                 }
 
-                if ( expr_type.type != T_RW_INTEGER && expr_type.type != T_RW_ENUM){
+                if ( expr_type.type != T_RW_INTEGER ){//&& expr_type.type != T_RW_ENUM){
                         error_printf( *itr, "Array index is invalid type \n");
                         return false;
                 }
@@ -248,13 +248,9 @@ bool Parser::parseAssignmentStatement(std::list<token_t>::iterator *itr)
                 return false;
         }
 
-        if (dest_type.type == T_RW_ENUM){
-                dest_type.type = T_RW_INTEGER; // Enums treated as integers
-        }
-
-        if (dest_type.type == T_RW_ENUM){
-                expr_type.type = T_RW_INTEGER; // Enums treated as integers
-        }
+        // if (dest_type.type == T_RW_ENUM){
+        //         dest_type.type = T_RW_INTEGER; // Enums treated as integers
+        // }
 
         // Check that destination type matches expression type
         if (type_holder_cmp(dest_type, expr_type)){
@@ -477,9 +473,9 @@ bool Parser::parseDeclaration(std::list<token_t>::iterator *itr)
                 // Procedure Declaration
         }else if ((ret = this->parseVariableDeclaration(itr, global))){
                 // Variable Declaration
-        }else if ((ret = this->parseTypeDeclaration(itr, global))){
-                // Type Declaration
-        } // else no valid declaration
+        }//else if ((ret = this->parseTypeDeclaration(itr, global))){
+        //        // Type Declaration
+        //} // else no valid declaration
 
         return ret;
 }
@@ -742,53 +738,53 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
         return ret;
 }
 
-bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global)
-{
-        debug_print_call();
-        bool ret = false;
-        std::string name;
-        symbol_t symbol;
+// bool Parser::parseTypeDeclaration(std::list<token_t>::iterator *itr, bool global)
+// {
+//         debug_print_call();
+//         bool ret = false;
+//         std::string name;
+//         symbol_t symbol;
 
-        // check "type" tag
-        if ((*itr)->type == T_RW_TYPE){
-                this->next_token(itr); // Move to next token
-        }else{
-                return false; // not an error, just not a type
-        }
+//         // check "type" tag
+//         if ((*itr)->type == T_RW_TYPE){
+//                 this->next_token(itr); // Move to next token
+//         }else{
+//                 return false; // not an error, just not a type
+//         }
 
-        // check identifier
-        if ((*itr)->type == T_IDENTIFIER){                
-                symbol.type = ST_TYPE;
-                name = *(*itr)->getStringValue();
+//         // check identifier
+//         if ((*itr)->type == T_IDENTIFIER){                
+//                 symbol.type = ST_TYPE;
+//                 name = *(*itr)->getStringValue();
                 
-                this->next_token(itr); // Move to next token
-        }else{
-                error_printf( *itr, "Expected identifier after  \"TYPE\" \n");
-                return false;
-        }
+//                 this->next_token(itr); // Move to next token
+//         }else{
+//                 error_printf( *itr, "Expected identifier after  \"TYPE\" \n");
+//                 return false;
+//         }
 
-        // check "is" tag
-        if ((*itr)->type == T_RW_IS){
-                this->next_token(itr); // Move to next token
-        }else{
-                error_printf( *itr, "Expected \"IS\" after type identifier \n");
-                return false;
-        }
+//         // check "is" tag
+//         if ((*itr)->type == T_RW_IS){
+//                 this->next_token(itr); // Move to next token
+//         }else{
+//                 error_printf( *itr, "Expected \"IS\" after type identifier \n");
+//                 return false;
+//         }
 
-        // parse typemark
-        ret = this->parseTypeDef(itr, global, &symbol);
-        if( !ret){
-                return false;
-        }
+//         // parse typemark
+//         ret = this->parseTypeDef(itr, global, &symbol);
+//         if( !ret){
+//                 return false;
+//         }
 
-        if (global){
-                this->scope->AddGlobalSymbol(name, symbol);
-        }else{
-                this->scope->AddSymbol(name, symbol);
-        }
+//         if (global){
+//                 this->scope->AddGlobalSymbol(name, symbol);
+//         }else{
+//                 this->scope->AddSymbol(name, symbol);
+//         }
 
-        return ret;
-}
+//         return ret;
+// }
 
 bool Parser::parseEnum(std::list<token_t>::iterator *itr, bool global, symbol_t* symbol)
 {
@@ -842,19 +838,19 @@ bool Parser::parseEnum(std::list<token_t>::iterator *itr, bool global, symbol_t*
         return ret;
 }
 
-bool Parser::parseTypeDef(std::list<token_t>::iterator *itr, bool global /*= false*/, symbol_t* symbol /*= NULL*/)
-{
-        debug_print_call();
-        bool ret = false;
+// bool Parser::parseTypeDef(std::list<token_t>::iterator *itr, bool global /*= false*/, symbol_t* symbol /*= NULL*/)
+// {
+//         debug_print_call();
+//         bool ret = false;
 
-        if (((*itr)->type == T_RW_ENUM)){ // if enum
-                ret = parseEnum(itr, global, symbol);
-        }else{
-                ret = parseTypeMark(itr, global, symbol);
-        }
+//         if (((*itr)->type == T_RW_ENUM)){ // if enum
+//                 ret = parseEnum(itr, global, symbol);
+//         }else{
+//                 ret = parseTypeMark(itr, global, symbol);
+//         }
 
-        return ret;
-}
+//         return ret;
+// }
 
 /**     This gets  called by parseProcedureHeader, parseVariableDeclaration and parseTypeMark
  *      if it is called by parseTypeMark4
@@ -869,7 +865,7 @@ bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global, symbo
             ((*itr)->type == T_RW_FLOAT) ||
             ((*itr)->type == T_RW_STRING) ||
             ((*itr)->type == T_RW_BOOL) ||
-            ((*itr)->type == T_RW_ENUM) ||
+            //((*itr)->type == T_RW_ENUM) ||
             ((*itr)->type == T_IDENTIFIER))
         {
                 if (symbol != NULL){

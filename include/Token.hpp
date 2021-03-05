@@ -51,7 +51,7 @@ typedef enum{
         T_RW_FLOAT,
         T_RW_STRING,
         T_RW_BOOL,
-        T_RW_ENUM,
+        //T_RW_ENUM,
         T_RW_PROCEDURE,
         T_RW_VARIABLE,
         T_RW_IF,

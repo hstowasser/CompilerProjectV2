@@ -80,8 +80,8 @@ const char * token_type_to_string(token_type_e token_type)
                 return "T_RW_STRING";
         case T_RW_BOOL:
                 return "T_RW_BOOL";
-        case T_RW_ENUM:
-                return "T_RW_ENUM";
+        //case T_RW_ENUM:
+        //        return "T_RW_ENUM";
         case T_RW_PROCEDURE:
                 return "T_RW_PROCEDURE";
         case T_RW_VARIABLE:
