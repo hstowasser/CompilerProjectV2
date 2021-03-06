@@ -8,9 +8,7 @@
 typedef enum {
         ST_UNKNOWN,
         ST_VARIABLE,
-        ST_PROCEDURE,
-        ST_ENUM_CONST,
-        ST_TYPE
+        ST_PROCEDURE
 } SymbolType_e;
 
 
@@ -27,7 +25,6 @@ typedef struct _symbol_t{
         // TODO add something to track if it is an array, hold length
         SymbolType_e type;
         type_holder_t variable_type; // Could also double as function return type
-        unsigned int enum_index; // for ST_ENUM_CONST
 
         unsigned int parameter_ct = 0;
         type_holder_t * parameter_type_arr = NULL; // Will need to account for memory leak
@@ -41,8 +38,10 @@ private:
 
         std::map<std::string, symbol_table_t> symbol_tables; // Need some kind of associated identifier
 
+        std::list<std::string> procedure_name_stack;
         std::list<std::string> scope_stack;
 
+        std::string current_procedure_name;
         std::string current_scope_name;
 public:
         Scope();
@@ -59,6 +58,7 @@ public:
         std::map<std::string,symbol_t>::iterator FindGlobal(std::string, bool* success);
         std::map<std::string,symbol_t>::iterator Find(std::string, bool* success); // Searches local first then global
 
+        std::string getProcedureName();
         // void SetValueType(std::string, );
 
         void PrintScope(); //For Debugging

@@ -93,6 +93,22 @@ bool Parser::FindSymbol_Helper(std::list<token_t>::iterator *itr, symbol_t* symb
     return success;
 }
 
+bool Parser::GetProcedureType(type_holder_t* parameter_type)
+{
+        std::string procedure_name = this->scope->getProcedureName();
+        bool success;
+        std::map<std::string,symbol_t>::iterator temp;
+
+        temp = this->scope->Find(procedure_name, &success);
+        if (success){
+                *parameter_type = temp->second.variable_type;
+        } else {
+                // TODO verify that return statements are not valid in Program scope
+                printf( "Failed to obtain Procedure return type. \n");
+        }
+        return success;
+}
+
 bool Parser::parseProgram(std::list<token_t>::iterator *itr)
 {
         debug_print_call();
@@ -276,6 +292,7 @@ bool Parser::parseIfStatement(std::list<token_t>::iterator *itr)
 {
         debug_print_call();
         bool ret = false;
+        type_holder_t expr_type;
 
         if ((*itr)->type == T_RW_IF){
                 this->next_token(itr); // Move to next token
@@ -290,8 +307,15 @@ bool Parser::parseIfStatement(std::list<token_t>::iterator *itr)
                 return false;
         }
 
-        ret = this->parseExpression(itr); // TODO Check that expression type is either int or bool
+        ret = this->parseExpression(itr, &expr_type);
         if (!ret){
+                return false;
+        }
+
+        // Check that expression type is either int or bool
+        if ( !(expr_type.type == T_RW_BOOL ||
+               expr_type.type == T_RW_INTEGER)){
+                error_printf(*itr, "IF Expression must be bool or int \n");
                 return false;
         }
 
@@ -357,6 +381,7 @@ bool Parser::parseLoopStatement(std::list<token_t>::iterator *itr)
 {
         debug_print_call();
         bool ret = false;
+        type_holder_t expr_type;
 
         if ((*itr)->type == T_RW_FOR){
                 this->next_token(itr); // Move to next token
@@ -383,8 +408,15 @@ bool Parser::parseLoopStatement(std::list<token_t>::iterator *itr)
                 return false;
         }
 
-        ret = this->parseExpression(itr); // TODO Check that expression is bool or int
+        ret = this->parseExpression(itr, &expr_type);
         if (!ret){
+                return false;
+        }
+
+        // Check that expression type is either int or bool
+        if ( !(expr_type.type == T_RW_BOOL ||
+               expr_type.type == T_RW_INTEGER)){
+                error_printf(*itr, "IF Expression must be bool or int \n");
                 return false;
         }
 
@@ -428,6 +460,8 @@ bool Parser::parseReturnStatement(std::list<token_t>::iterator *itr)
 {
         debug_print_call();
         bool ret = false;
+        type_holder_t expr_type;
+        type_holder_t procedure_type;
 
         if ((*itr)->type == T_RW_RETURN){
                 this->next_token(itr); // Move to next token
@@ -435,7 +469,22 @@ bool Parser::parseReturnStatement(std::list<token_t>::iterator *itr)
                 return false; // Not a return statement
         }
 
-        ret = this->parseExpression(itr);
+        ret = this->parseExpression(itr, &expr_type);
+        if (!ret){
+                return false;
+        }
+
+        //Check that procedure type exactly matches return type
+        ret = GetProcedureType(&procedure_type);
+        if (!ret){
+                return false; // Failed to find procedure type
+        }
+
+        if(expr_type.type != procedure_type.type){
+                error_printf( *itr, "Procedure type and return type do not match \n"); // TODO print types
+                return false;
+        }
+
 
         return ret;
 }

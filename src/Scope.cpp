@@ -109,8 +109,10 @@ void Scope::PushScope(std::string name)
     symbol_table_t temp;
     this->symbol_tables[new_scope_name] = temp;
 
+    this->current_procedure_name = name;
     this->current_scope_name = new_scope_name;
 
+    this->procedure_name_stack.push_back(name);
     this->scope_stack.push_back(new_scope_name);
 }
 
@@ -118,6 +120,17 @@ void Scope::PopScope()
 {
     this->scope_stack.pop_back();
     this->current_scope_name = this->scope_stack.back();
+    this->procedure_name_stack.pop_back();
+    this->current_procedure_name = this->procedure_name_stack.back();
+}
+
+std::string Scope::getProcedureName()
+{
+    if (this->procedure_name_stack.front() == this->procedure_name_stack.back()){
+        return "";
+    }else{
+        return this->current_procedure_name;
+    }
 }
 
 void Scope::AddSymbol(std::string name, symbol_t symbol)
@@ -166,8 +179,7 @@ void Scope::PrintScope()
     {
         std::cout << "\t" << it->first << " ";
         if (it->second.type == ST_VARIABLE ||
-            it->second.type == ST_PROCEDURE ||
-            it->second.type == ST_TYPE){
+            it->second.type == ST_PROCEDURE){
 
             std::cout << token_type_to_string(it->second.variable_type.type);
 
@@ -193,8 +205,7 @@ void Scope::PrintScope()
         {
             std::cout << "\t" << it->first << " ";
             if (it->second.type == ST_VARIABLE ||
-                it->second.type == ST_PROCEDURE ||
-                it->second.type == ST_TYPE){
+                it->second.type == ST_PROCEDURE){
 
                 std::cout << token_type_to_string(it->second.variable_type.type);
 

@@ -60,7 +60,7 @@ typedef enum{
         T_RW_FOR,
         T_RW_RETURN,
         T_RW_NOT, // TODO What to do about this? Technically both reserved word and bool operator.
-        T_RW_TYPE,
+        // T_RW_TYPE,
         T_RW_TRUE,
         T_RW_FALSE,
 } token_type_e;

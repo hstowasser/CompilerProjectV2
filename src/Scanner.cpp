@@ -83,7 +83,7 @@ void Scanner::skipCommentsAndWhiteSpace(FileReader *reader)
 token_type_e Scanner::checkReservedWord(char* word)
 {
         token_type_e ret = T_IDENTIFIER; // We set it to identifier by default
-        const int res_word_ct = 21;
+        const int res_word_ct = 19;
         const char *reserved_list[res_word_ct];
         reserved_list[0] = "PROGRAM"; // NOTE: Order must match that in token_type_e
         reserved_list[1] = "IS";
@@ -94,18 +94,16 @@ token_type_e Scanner::checkReservedWord(char* word)
         reserved_list[6] = "FLOAT";
         reserved_list[7] = "STRING";
         reserved_list[8] = "BOOL";
-        reserved_list[9] = "ENUM";
-        reserved_list[10] = "PROCEDURE";
-        reserved_list[11] = "VARIABLE";
-        reserved_list[12] = "IF";
-        reserved_list[13] = "THEN";
-        reserved_list[14] = "ELSE";
-        reserved_list[15] = "FOR";
-        reserved_list[16] = "RETURN";
-        reserved_list[17] = "NOT";
-        reserved_list[18] = "TYPE";
-        reserved_list[19] = "TRUE";
-        reserved_list[20] = "FALSE";
+        reserved_list[9] = "PROCEDURE";
+        reserved_list[10] = "VARIABLE";
+        reserved_list[11] = "IF";
+        reserved_list[12] = "THEN";
+        reserved_list[13] = "ELSE";
+        reserved_list[14] = "FOR";
+        reserved_list[15] = "RETURN";
+        reserved_list[16] = "NOT";
+        reserved_list[17] = "TRUE";
+        reserved_list[18] = "FALSE";
 
         for (int index = 0; index < res_word_ct; index++){
                 if ( strcmp(word, reserved_list[index]) == 0 ){

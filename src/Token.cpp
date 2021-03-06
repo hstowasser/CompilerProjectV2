@@ -98,8 +98,8 @@ const char * token_type_to_string(token_type_e token_type)
                 return "T_RW_RETURN";
         case T_RW_NOT:
                 return "T_RW_NOT";
-        case T_RW_TYPE:
-                return "T_RW_TYPE";
+        // case T_RW_TYPE:
+        //         return "T_RW_TYPE";
         case T_RW_TRUE:
                 return "T_RW_TRUE";
         case T_RW_FALSE:
