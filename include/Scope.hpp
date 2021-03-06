@@ -20,10 +20,7 @@ typedef struct _symbol_t symbol_t;
 bool type_holder_cmp(type_holder_t a,  type_holder_t b);
 
 typedef struct _type_holder_t{
-        token_type_e type; // T_RW_INTEGER T_RW_FLOAT T_RW_BOOL T_RW_ENUM T_RW_STRING RW_IDENTIFIER are the only valid values
-
-        // IF RW_IDENTIFIER
-        std::map<std::string,symbol_t>::iterator itr; // Pointer to custom type symbol
+        token_type_e type; // T_RW_INTEGER T_RW_FLOAT T_RW_BOOL T_RW_STRING are the only valid values
 } type_holder_t;
 
 typedef struct _symbol_t{

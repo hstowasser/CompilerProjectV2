@@ -856,22 +856,10 @@ bool Parser::parseEnum(std::list<token_t>::iterator *itr, bool global, symbol_t*
  *      if it is called by parseTypeMark4
  * 
  */
-bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global, symbol_t* symbol)
+bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global, symbol_t* symbol /*= NULL*/)
 {
         debug_print_call();
         bool ret = false;
-
-        if (((*itr)->type == T_RW_INTEGER) ||
-            ((*itr)->type == T_RW_FLOAT) ||
-            ((*itr)->type == T_RW_STRING) ||
-            ((*itr)->type == T_RW_BOOL) ||
-            //((*itr)->type == T_RW_ENUM) ||
-            ((*itr)->type == T_IDENTIFIER))
-        {
-                if (symbol != NULL){
-                        symbol->variable_type.type = (*itr)->type;
-                }
-        }
 
         // check for integer or float or string or bool
         // then get identifier
@@ -880,19 +868,15 @@ bool Parser::parseTypeMark(std::list<token_t>::iterator *itr, bool global, symbo
             ((*itr)->type == T_RW_STRING) ||
             ((*itr)->type == T_RW_BOOL))
         {
+                if (symbol != NULL){
+                        symbol->variable_type.type = (*itr)->type;
+                }
                 this->next_token(itr); // Move to next token
                 ret = true;
         }else if ((*itr)->type == T_IDENTIFIER){
-                // Check symbol table for type. If exists set symbol->variable_type.ptr
-                symbol_t temp_symbol;
-                ret = FindSymbol_Helper(itr, &temp_symbol);
-                if ( temp_symbol.type == ST_TYPE){
-                        *symbol = temp_symbol;
-                }else{
-                        error_printf( *itr, "Symbol %s is not a type\n", get_c_string(itr) );
-                }
-
+                error_printf( *itr, "Symbol %s is not a type\n", get_c_string(itr) );
                 this->next_token(itr); // Move to next token
+                ret = false;
         }else {
                 return false;
         }

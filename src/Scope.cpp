@@ -4,11 +4,7 @@
 bool type_holder_cmp(type_holder_t a,  type_holder_t b)
 {
     if(a.type == b.type){
-        if( a.type == T_IDENTIFIER){
-            return a.itr == b.itr; // TODO Test
-        }else {
-            return true;
-        }
+        return true;
     }else{
         return false;
     }
@@ -172,21 +168,14 @@ void Scope::PrintScope()
         if (it->second.type == ST_VARIABLE ||
             it->second.type == ST_PROCEDURE ||
             it->second.type == ST_TYPE){
-            if ( it->second.variable_type.type == T_IDENTIFIER){
-                std::cout << it->second.variable_type.itr->first; // Print identifier of type
-            }else{
-                std::cout << token_type_to_string(it->second.variable_type.type);
-            }
+
+            std::cout << token_type_to_string(it->second.variable_type.type);
 
             if (it->second.type == ST_PROCEDURE){
                 // Print parameter types
                 for (unsigned int i=0; i<it->second.parameter_ct; i++)
                 {
-                    if ( it->second.parameter_type_arr[i].type == T_IDENTIFIER){
-                        std::cout << it->second.parameter_type_arr[i].itr->first; // Print identifier of type
-                    }else{
-                        std::cout << token_type_to_string(it->second.parameter_type_arr[i].type);
-                    }
+                    std::cout << token_type_to_string(it->second.parameter_type_arr[i].type);
                 }
             }
         }
@@ -206,21 +195,15 @@ void Scope::PrintScope()
             if (it->second.type == ST_VARIABLE ||
                 it->second.type == ST_PROCEDURE ||
                 it->second.type == ST_TYPE){
-                if ( it->second.variable_type.type == T_IDENTIFIER){
-                    std::cout << it->second.variable_type.itr->first; // Print identifier of type
-                }else{
-                    std::cout << token_type_to_string(it->second.variable_type.type);
-                }
+
+                std::cout << token_type_to_string(it->second.variable_type.type);
 
                 if (it->second.type == ST_PROCEDURE){
                     // Print parameter types
                     for (unsigned int i=0; i<it->second.parameter_ct; i++)
                     {
-                        if ( it->second.parameter_type_arr[i].type == T_IDENTIFIER){
-                            std::cout << it->second.parameter_type_arr[i].itr->first; // Print identifier of type
-                        }else{
-                            std::cout << token_type_to_string(it->second.parameter_type_arr[i].type);
-                        }
+
+                        std::cout << token_type_to_string(it->second.parameter_type_arr[i].type);                        
                         std::cout << " ";
                     }
                 }
