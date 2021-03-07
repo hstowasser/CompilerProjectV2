@@ -889,7 +889,7 @@ bool Parser::parseExpression(std::list<token_t>::iterator *itr, type_holder_t* p
                 bitwise_op = true;
         }
         
-        ret = this->parseArithOp(itr, &temp_arithop); // TODO add type checking
+        ret = this->parseArithOp(itr, &temp_arithop);
         if (!ret) {
                 return false;
         }
@@ -944,27 +944,22 @@ bool Parser::parseArithOp(std::list<token_t>::iterator *itr, type_holder_t* para
                         this->next_token(itr); // Move to next token
                         ret = this->parseArithOp(itr, &temp_arithop);
 
-                        if (type_holder_cmp(temp_relation, temp_arithop)){
-                                // Both are the same
-                                *parameter_type = temp_relation;
-                        } else if ( ((temp_relation.type == T_RW_INTEGER) || (temp_relation.type == T_RW_BOOL)) &&
-                                ((temp_arithop.type == T_RW_INTEGER) || (temp_arithop.type == T_RW_BOOL))) {
-                                // Combinations of int and bool are allowed
-                                parameter_type->type = T_RW_INTEGER; // Default to int
-                        } else if ( ((temp_relation.type == T_RW_INTEGER) || (temp_relation.type == T_RW_FLOAT)) &&
-                                ((temp_arithop.type == T_RW_INTEGER) || (temp_arithop.type == T_RW_FLOAT))) {
+                        if ( ((temp_relation.type == T_RW_INTEGER) || (temp_relation.type == T_RW_FLOAT)) &&
+                             ((temp_arithop.type == T_RW_INTEGER) || (temp_arithop.type == T_RW_FLOAT))) {
                                 // Combinations of int and float are allowed
-                                parameter_type->type = T_RW_FLOAT; // Default to float
+                                if (temp_relation.type == T_RW_FLOAT || temp_arithop.type == T_RW_FLOAT){
+                                        parameter_type->type = T_RW_FLOAT; // Default to float
+                                }else{
+                                        parameter_type->type = T_RW_INTEGER;
+                                }
                         } else {
-                                error_printf( *itr, "Types do not match \n"); // TODO print types
+                                error_printf( *itr, "Arithmetic Ops (+,-) are only defined for integers and floats \n");
                                 return false;
                         }
                 }else{
                         *parameter_type = temp_relation;
                 }
-        }
-
-        
+        }        
 
         return ret;
 }
