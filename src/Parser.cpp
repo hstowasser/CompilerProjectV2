@@ -881,39 +881,45 @@ bool Parser::parseExpression(std::list<token_t>::iterator *itr, type_holder_t* p
         bool ret = false;
         type_holder_t temp_arithop;
         type_holder_t temp_expression;
+        bool bitwise_op = false;
 
         // check for not
-        if ((*itr)->type == T_OP_BITW_NOT){
+        if ((*itr)->type == T_RW_NOT){
                 this->next_token(itr); // Move to next token
+                bitwise_op = true;
         }
         
         ret = this->parseArithOp(itr, &temp_arithop); // TODO add type checking
-        if (!ret){
+        if (!ret) {
                 return false;
+        }
+        if (bitwise_op){
+                if (temp_arithop.type == T_RW_INTEGER) {
+                        // Good
+                } else {
+                        error_printf( *itr, "Bitwise operation NOT is only defined for integers \n");
+                        return false;
+                }
         }
 
         if (((*itr)->type == T_OP_BITW_AND) ||
-                ((*itr)->type == T_OP_BITW_OR))
-        {
+            ((*itr)->type == T_OP_BITW_OR)) {
                 // Then it's an Expression?
                 this->next_token(itr); // Move to next token
                 ret = this->parseExpression(itr, &temp_expression);
 
-                if (parameter_type != NULL) {
-                        if (type_holder_cmp(temp_expression, temp_arithop)){
-                                // Both are the same
+                // Bitwise operations are only valid for integers
+                if ((temp_expression.type == T_RW_INTEGER) &&
+                   ((temp_arithop.type == T_RW_INTEGER))) {
+                        if ( parameter_type != NULL){
                                 *parameter_type = temp_arithop;
-                        } else if ( ((temp_expression.type == T_RW_INTEGER) || (temp_expression.type == T_RW_BOOL)) &&
-                                ((temp_expression.type == T_RW_INTEGER) || (temp_expression.type == T_RW_BOOL))) {
-                                // Combinations of int and bool are allowed
-                                parameter_type->type = T_RW_BOOL; // Default to bool
-                        } else {
-                                error_printf( *itr, "Types do not match \n"); // TODO print types
-                                return false;
                         }
+                } else {
+                        error_printf( *itr, "Bitwise operations AND/OR are only defined for integers \n");
+                        return false;
                 }
                 
-        }else{
+        } else {
                 if (parameter_type != NULL) {
                         *parameter_type = temp_arithop;
                 }                        

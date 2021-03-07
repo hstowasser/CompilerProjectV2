@@ -27,7 +27,7 @@ typedef enum{
         T_SYM_COMMA,
         T_OP_BITW_AND,
         T_OP_BITW_OR,
-        T_OP_BITW_NOT,
+        // T_OP_BITW_NOT,
         T_OP_ASIGN_EQUALS,
         T_OP_TERM_MULTIPLY,
         T_OP_TERM_DIVIDE,
@@ -59,7 +59,7 @@ typedef enum{
         T_RW_ELSE,
         T_RW_FOR,
         T_RW_RETURN,
-        T_RW_NOT, // TODO What to do about this? Technically both reserved word and bool operator.
+        T_RW_NOT, // Bitwise not operator
         // T_RW_TYPE,
         T_RW_TRUE,
         T_RW_FALSE,

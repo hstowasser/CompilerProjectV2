@@ -32,8 +32,8 @@ const char * token_type_to_string(token_type_e token_type)
                 return "T_OP_BITW_AND";
         case T_OP_BITW_OR:
                 return "T_OP_BITW_OR";
-        case T_OP_BITW_NOT:
-                return "T_OP_BITW_NOT";
+        // case T_OP_BITW_NOT:
+        //         return "T_OP_BITW_NOT";
         case T_OP_ASIGN_EQUALS:
                 return "T_OP_ASIGN_EQUALS";
         case T_OP_TERM_MULTIPLY:
