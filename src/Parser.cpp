@@ -970,34 +970,55 @@ bool Parser::parseRelation(std::list<token_t>::iterator *itr, type_holder_t* par
         bool ret = false;
         type_holder_t temp_relation;
         type_holder_t temp_term;
+        bool is_equal = false;
 
         ret = this->parseTerm(itr, &temp_term);
-        if (ret){
-                if (((*itr)->type == T_OP_REL_GREATER) ||
-                    ((*itr)->type == T_OP_REL_LESS) ||
-                    ((*itr)->type == T_OP_REL_GREATER_EQUAL) ||
-                    ((*itr)->type == T_OP_REL_LESS_EQUAL) ||
-                    ((*itr)->type == T_OP_REL_EQUAL) ||
-                    ((*itr)->type == T_OP_REL_NOT_EQUAL))
-                {
-                        // Then it's a relation?
-                        this->next_token(itr); // Move to next token
-                        ret = this->parseRelation(itr, &temp_relation);
+        if (!ret){
+                return false;
+        }
 
-                        if (type_holder_cmp(temp_relation, temp_term)){
-                                // Both are the same
-                                *parameter_type = temp_term;
-                        } else if ( ((temp_relation.type == T_RW_INTEGER) || (temp_relation.type == T_RW_BOOL)) &&
-                                ((temp_term.type == T_RW_INTEGER) || (temp_term.type == T_RW_BOOL))) {
-                                // Combinations of int and bool are allowed
-                                parameter_type->type = T_RW_BOOL; // Default to bool
-                        } else {
-                                error_printf( *itr, "Types do not match \n"); // TODO print types
-                                return false;
-                        }
-                }else{
-                        *parameter_type = temp_term;
+        if (((*itr)->type == T_OP_REL_GREATER) ||
+                ((*itr)->type == T_OP_REL_LESS) ||
+                ((*itr)->type == T_OP_REL_GREATER_EQUAL) ||
+                ((*itr)->type == T_OP_REL_LESS_EQUAL) ||
+                ((*itr)->type == T_OP_REL_EQUAL) ||
+                ((*itr)->type == T_OP_REL_NOT_EQUAL))
+        {
+                if (((*itr)->type == T_OP_REL_EQUAL) ||
+                        ((*itr)->type == T_OP_REL_NOT_EQUAL)){
+                        is_equal = true;
                 }
+
+                // Then it's a relation?
+                this->next_token(itr); // Move to next token
+                ret = this->parseRelation(itr, &temp_relation);
+
+                if (type_holder_cmp(temp_relation, temp_term)){
+                        // Both are the same
+                        if ((temp_relation.type == T_RW_INTEGER) ||
+                                (temp_relation.type == T_RW_BOOL) ||
+                                (temp_relation.type == T_RW_FLOAT)) {
+                                // Good
+                                parameter_type->type = T_RW_BOOL;
+                        } else if (temp_relation.type == T_RW_STRING) {
+                                if (is_equal){
+                                        parameter_type->type = T_RW_BOOL;
+                                } else {
+                                        error_printf( *itr, "Strings only support == and != relation operators \n");
+                                }
+                        } else {
+                                error_printf( *itr, "Relation operators are only defined for INT, BOOL and FLOATS \n");
+                        }                                
+                } else if ( ((temp_relation.type == T_RW_INTEGER) || (temp_relation.type == T_RW_BOOL)) &&
+                        ((temp_term.type == T_RW_INTEGER) || (temp_term.type == T_RW_BOOL))) {
+                        // Combinations of int and bool are allowed
+                        parameter_type->type = T_RW_BOOL; // Default to bool
+                } else {
+                        error_printf( *itr, "Types do not match \n"); // TODO print types
+                        return false;
+                }
+        }else{
+                *parameter_type = temp_term;
         }
 
 
