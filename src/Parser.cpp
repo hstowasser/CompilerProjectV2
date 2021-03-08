@@ -1034,12 +1034,12 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr, type_holder_t
 {
         debug_print_call();
         bool ret = false;
+        symbol_t temp_symbol;
 
         // Check for identifier
         if ((*itr)->type == T_IDENTIFIER){
                 // Check that identifier is defined as a procedure
                 // set parameter type to return type of procedure
-                symbol_t temp_symbol;
                 if (FindSymbol_Helper(itr, &temp_symbol)){
                         if( temp_symbol.type == ST_PROCEDURE ){
                                 *parameter_type = temp_symbol.variable_type;
@@ -1058,16 +1058,20 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr, type_holder_t
                 return ret;
         }
 
-
         if ((*itr)->type == T_SYM_LPAREN){
                 this->next_token(itr); // Move to next token
                 
                 if ((*itr)->type == T_SYM_RPAREN){
                         // Procedure call has no arguments
-                        this->next_token(itr); // Move to next token
-                        ret = true;
+                        if (temp_symbol.parameter_ct == 0){
+                                this->next_token(itr); // Move to next token
+                                ret = true;
+                        } else {
+                                error_printf( *itr, "Expected %d arguments, found none \n", temp_symbol.parameter_ct);
+                                return false;
+                        }                        
                 }else{
-                        ret = this->parseArgumentList(itr);
+                        ret = this->parseArgumentList(itr, temp_symbol);
                         if ( ret == false){
                                 return ret;
                         }
@@ -1086,23 +1090,42 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr, type_holder_t
         return ret;
 }
 
-bool Parser::parseArgumentList(std::list<token_t>::iterator *itr)
+bool Parser::parseArgumentList(std::list<token_t>::iterator *itr, symbol_t procedure_symbol)
 {
         debug_print_call();
         bool ret = false;
+        unsigned int arg_ct = 0;
+        bool first = true;
 
-        // Parse expression
-        ret = this->parseExpression(itr);
-        if (ret == false){
-                return ret;
-        }
+        type_holder_t expr_type;
 
-        // if comma, keep parsing Argument List
-        if ((*itr)->type == T_SYM_COMMA){
-                this->next_token(itr); // Move to next token
+        do{
+                if (first){
+                        first = false;
+                }else{
+                        this->next_token(itr); // Move to next token
+                }
 
-                //Parse ArgumentList
-                ret = this->parseArgumentList(itr);
+                if (arg_ct+1 > procedure_symbol.parameter_ct) {
+                        error_printf( *itr, "Procedure call as too many arguments \n");
+                        return false;
+                }
+
+                ret = this->parseExpression(itr, &expr_type);
+                if (ret == false){
+                        return ret;
+                }
+                if (expr_type.type != procedure_symbol.parameter_type_arr[arg_ct].type){
+                        error_printf( *itr, "Argument %d's type does not match that of procedure call \n", arg_ct+1);
+                        return false;
+                }
+
+                arg_ct++;
+        } while ((*itr)->type == T_SYM_COMMA);
+
+        if (arg_ct < procedure_symbol.parameter_ct) {
+                error_printf( *itr, "Procedure call as too few arguments \n");
+                return false;
         }
         return ret;
 }
