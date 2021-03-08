@@ -759,6 +759,8 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
 
                 // parse bound
                 if ((*itr)->type == T_CONST_INTEGER){
+                        symbol.variable_type.is_array = true;
+                        symbol.variable_type.array_length = (unsigned int)(*itr)->getIntValue();
                         this->next_token(itr); // Move to next token
                 }else{
                         error_printf( *itr, "Expected bound inside of [] \n");

@@ -19,10 +19,11 @@ bool type_holder_cmp(type_holder_t a,  type_holder_t b);
 
 typedef struct _type_holder_t{
         token_type_e type; // T_RW_INTEGER T_RW_FLOAT T_RW_BOOL T_RW_STRING are the only valid values
+        bool is_array = false;
+        unsigned int array_length = 0;
 } type_holder_t;
 
 typedef struct _symbol_t{
-        // TODO add something to track if it is an array, hold length
         SymbolType_e type;
         type_holder_t variable_type; // Could also double as function return type
 
