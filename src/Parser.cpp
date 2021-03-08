@@ -1124,22 +1124,22 @@ bool Parser::parseTerm(std::list<token_t>::iterator *itr, type_holder_t* paramet
                         ret = this->parseTerm(itr, &temp_term);
 
                         if (type_holder_cmp(temp_factor, temp_term)){
-                                // Both are the same
-                                *parameter_type = temp_factor;
-                        } else if ( ((temp_factor.type == T_RW_INTEGER) || (temp_factor.type == T_RW_FLOAT)) &&
-                                ((temp_term.type == T_RW_INTEGER) || (temp_term.type == T_RW_FLOAT))) {
-                                // Combinations of int and float are allowed
-                                parameter_type->type = T_RW_FLOAT; // Default to float
+                                if (temp_factor.type == T_RW_INTEGER) {
+                                        // Combinations of int and float are allowed
+                                        parameter_type->type = T_RW_INTEGER;
+                                } else if (temp_factor.type == T_RW_FLOAT){
+                                        parameter_type->type = T_RW_FLOAT;
+                                } else {
+                                        error_printf( *itr, "Terms must both be either integers or floats \n");
+                                }
                         } else {
-                                error_printf( *itr, "Types do not match \n"); // TODO print types
+                                error_printf( *itr, "Types do not match. Terms must both be either integers or floats \n");
                                 return false;
                         }
                 }else{
                         *parameter_type = temp_factor;
                 }
         }
-
-
 
         return ret;
 }
