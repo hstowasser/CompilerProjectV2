@@ -264,10 +264,6 @@ bool Parser::parseAssignmentStatement(std::list<token_t>::iterator *itr)
                 return false;
         }
 
-        // if (dest_type.type == T_RW_ENUM){
-        //         dest_type.type = T_RW_INTEGER; // Enums treated as integers
-        // }
-
         // Check that destination type matches expression type
         if (type_holder_cmp(dest_type, expr_type)){
                 // Both are the same
@@ -275,13 +271,13 @@ bool Parser::parseAssignmentStatement(std::list<token_t>::iterator *itr)
         } else if ( ((expr_type.type == T_RW_INTEGER) || (expr_type.type == T_RW_FLOAT)) &&
                 ((dest_type.type == T_RW_INTEGER) || (dest_type.type == T_RW_FLOAT))) {
                 // Combinations of int and float are allowed
-                
+                // Typecase to destination
         } else if ( ((expr_type.type == T_RW_INTEGER) || (expr_type.type == T_RW_BOOL)) &&
                 ((dest_type.type == T_RW_INTEGER) || (dest_type.type == T_RW_BOOL))) {
                 // Combinations of int and bool are allowed
-                
+                // Typecast to destination
         } else {
-                error_printf( *itr, "Types do not match \n"); // TODO print types
+                error_printf( *itr, "Destination type does not match expression \n"); // TODO print types
                 return false;
         }
 
