@@ -206,6 +206,19 @@ bool Parser::parseDestination(std::list<token_t>::iterator *itr, type_holder_t* 
         // if open bracket
         if ((*itr)->type == T_SYM_LBRACKET){
 
+                if (parameter_type->type == T_RW_STRING){
+                        error_printf( *itr, "Indexing not supported for strings\n");
+                        return false;
+                }
+        
+                if (parameter_type->is_array == false){
+                        error_printf( *itr, "Identifier is not an array\n");
+                        return false;
+                } else {
+                        // Set is_array to false because we are grabbing one element
+                        parameter_type->is_array = false;
+                }
+
                 this->next_token(itr); // Move to next token
 
                 type_holder_t expr_type;
@@ -280,6 +293,15 @@ bool Parser::parseAssignmentStatement(std::list<token_t>::iterator *itr)
                 error_printf( *itr, "Destination type does not match expression \n"); // TODO print types
                 return false;
         }
+
+        // TODO Codegeneration
+        // if int | float | bool
+                // store <destination_type> <expression>, <destination_type>* <destination_ptr>
+                // store <i32/float/bool> %current, <i32/float/bool>* symbol_table_lookup_%reg
+        // if string
+                // change pointer in symbol table
+        // if array
+                // use llvm.memcpy
 
         return ret; 
 }

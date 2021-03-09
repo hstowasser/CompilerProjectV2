@@ -4,9 +4,21 @@
 bool type_holder_cmp(type_holder_t a,  type_holder_t b)
 {
     if(a.type == b.type){
-        return true;
+        if (a.is_array == b.is_array){
+            if (a.is_array){
+                if (a.array_length == b.array_length){
+                    return true; // Types and lengths match
+                }else{
+                    return false; // Array lengths do not match
+                }
+            } else {
+                return true; // types match and neither are arrays
+            }            
+        }else{
+            return false; // one is an array and the other is not
+        }        
     }else{
-        return false;
+        return false; // Types do not match
     }
 }
 
