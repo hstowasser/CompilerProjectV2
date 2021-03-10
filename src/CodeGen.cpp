@@ -176,7 +176,7 @@ void Parser::genVariableDeclaration( symbol_t* symbol, bool global)
                                 break;
                         }
                 } else {
-                        unsigned int len = symbol->parameter_ct;
+                        unsigned int len = symbol->variable_type.array_length;
                         ss << "@" << this->scope->reg_ct_global << " = global [" 
                         << len << " x "; // @g = global [len x 
                         switch (symbol->variable_type.type){
