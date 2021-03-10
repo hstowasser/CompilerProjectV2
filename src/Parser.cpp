@@ -1060,6 +1060,8 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr, type_holder_t
         debug_print_call();
         bool ret = false;
         symbol_t temp_symbol;
+        std::string name;
+        std::list<unsigned int> regs;
 
         // Check for identifier
         if ((*itr)->type == T_IDENTIFIER){
@@ -1076,12 +1078,15 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr, type_holder_t
                         return false; // Procedure not defined
                 }
 
+                name = get_string(itr);
                 this->next_token(itr); // Move to next token
         }else {
                 // Should never reach here
                 ret = false;
                 return ret;
         }
+
+        
 
         if ((*itr)->type == T_SYM_LPAREN){
                 this->next_token(itr); // Move to next token
@@ -1096,7 +1101,7 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr, type_holder_t
                                 return false;
                         }                        
                 }else{
-                        ret = this->parseArgumentList(itr, temp_symbol);
+                        ret = this->parseArgumentList(itr, temp_symbol, &regs);
                         if ( ret == false){
                                 return ret;
                         }
@@ -1112,10 +1117,13 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr, type_holder_t
         } else {
                 // Should never reach here
         }
+
+        this->genProcedureCall(temp_symbol, name, regs);
+
         return ret;
 }
 
-bool Parser::parseArgumentList(std::list<token_t>::iterator *itr, symbol_t procedure_symbol)
+bool Parser::parseArgumentList(std::list<token_t>::iterator *itr, symbol_t procedure_symbol, std::list<unsigned int> *regs)
 {
         debug_print_call();
         bool ret = false;
@@ -1137,6 +1145,8 @@ bool Parser::parseArgumentList(std::list<token_t>::iterator *itr, symbol_t proce
                 }
 
                 ret = this->parseExpression(itr, &expr_type);
+                regs->push_back(expr_type.reg_ct);
+
                 if (ret == false){
                         return ret;
                 }

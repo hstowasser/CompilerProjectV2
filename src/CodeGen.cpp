@@ -332,7 +332,25 @@ void Parser::genConstant(std::list<token_t>::iterator itr, type_holder_t* parame
         default:
                 break;
         }
-        
-        
+}
 
+void Parser::genProcedureCall(symbol_t symbol, std::string name, std::list<unsigned int> regs)
+{
+        std::ostringstream ss;
+        unsigned int d = this->scope->reg_ct_local;
+
+        ss << "  %" << d << " = call " << get_llvm_type(symbol.variable_type.type) << " @" << name << symbol._procedure_ct << "(";
+
+        auto it = regs.begin();
+        for (unsigned int i = 0; i < symbol.parameter_ct; i++){
+                if (i != 0){
+                        ss << ", ";
+                }
+                ss << get_llvm_type(symbol.parameter_type_arr[i].type) << " %" << *it;
+                it++;
+        }
+        ss << ")";
+        
+        this->scope->writeCode(ss.str());
+        this->scope->reg_ct_local++;
 }

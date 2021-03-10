@@ -40,7 +40,7 @@ private:
         bool parseName(std::list<token_t>::iterator *itr, type_holder_t* parameter_type); // TODO how to track array types?
         bool parseProcedureCall(std::list<token_t>::iterator *itr, type_holder_t* parameter_type);
         
-        bool parseArgumentList(std::list<token_t>::iterator *itr, symbol_t procedure_symbol);
+        bool parseArgumentList(std::list<token_t>::iterator *itr, symbol_t procedure_symbol, std::list<unsigned int> *regs);
 
         bool AddSymbol_Helper(std::list<token_t>::iterator *itr, bool global, symbol_t symbol);
         bool FindVariableType_Helper(std::list<token_t>::iterator *itr, type_holder_t* parameter_type);
@@ -66,7 +66,9 @@ private:
         void genProgramBodyEnd();
         void genProcedureHeader(symbol_t symbol, std::string name);
         void genProcedureEnd();
-        void genConstant(std::list<token_t>::iterator itr, type_holder_t* parameter_type, bool is_negative = false);
+        void genProcedureCall(symbol_t symbol, std::string name, std::list<unsigned int> regs);
+        void genArgumentsList();
+        void genConstant(std::list<token_t>::iterator itr, type_holder_t* parameter_type, bool is_negative = false); // used in parseFactor
 
 
 public:
