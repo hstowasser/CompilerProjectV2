@@ -200,6 +200,7 @@ void Parser::genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_
 
         if (expr_type._is_global){
                 // TODO Implement GEP
+                // load value
                 // update expr_type.reg_ct
         }
 
@@ -207,7 +208,6 @@ void Parser::genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_
                 // TODO Implement memcpy
         } else {
                 if (type_holder_cmp(dest_type, expr_type)){
-                        // TODO This does not work for string constants
                         // Both are the same
                         // store <type> %expression, <type>* %destination
                         genStoreReg(dest_type.type, d-1, dest_type.reg_ct);                        
@@ -227,11 +227,41 @@ void Parser::genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_
 void Parser::genProgramHeader()
 {
         this->scope->writeCode("define i32 @main() {");
+        this->scope->reg_ct_local++; // Not sure why, but there is always an unused reg after parameter list
 }
 
 void Parser::genProgramBodyEnd()
 {
         this->scope->writeCode("  ret i32 0");
+        this->scope->writeCode("}");
+}
+
+void Parser::genProcedureHeader(symbol_t symbol, std::string name)
+{
+        std::ostringstream ss;
+        if ( symbol.variable_type.is_array){
+                // I don't think this is supported
+        } else {
+                ss << "define " << get_llvm_type(symbol.variable_type.type) <<" @" << name << symbol._procedure_ct << "(";
+        }
+
+        // Define parameters
+        for (unsigned int i = 0; i < symbol.parameter_ct; i++){
+                if (i != 0){
+                        ss << ", ";
+                }
+                ss << get_llvm_type(symbol.parameter_type_arr[i].type) << " %" << this->scope->reg_ct_local;
+                this->scope->reg_ct_local++;
+        }
+        this->scope->reg_ct_local++; // Not sure why, but there is always an unused reg after parameter list
+        
+        ss << ") {";
+        this->scope->writeCode(ss.str());
+        
+}
+
+void Parser::genProcedureEnd()
+{
         this->scope->writeCode("}");
 }
 
@@ -261,34 +291,25 @@ void Parser::genConstant(std::list<token_t>::iterator itr, type_holder_t* parame
                 this->genStoreConst(temp_reg, false);
                 parameter_type->reg_ct = this->genLoadReg(T_RW_BOOL, temp_reg);
                 break;
-        case T_CONST_STRING: // TODO update reg_ct
+        case T_CONST_STRING:
                 temp = *(itr->getStringValue());
                 ss0 << "@" << g << " = constant [" << temp.length()+1 << " x i8] c\"" << temp << "\\00\"";
-                ss1 << "  %" << d << " = getelementptr [" << temp.length()+1 << " x i8], [" << temp.length()+1 << " x i8]* @" << g << ", i64 0, i64 0";
-                this->scope->reg_ct_global++;
                 this->scope->writeCode(ss0.str(), true);
+                this->scope->reg_ct_global++;
+                ss1 << "  %" << d << " = getelementptr [" << temp.length()+1 << " x i8], [" << temp.length()+1 << " x i8]* @" << g << ", i64 0, i64 0";
+                parameter_type->reg_ct = d;             
                 this->scope->writeCode(ss1.str());
                 this->scope->reg_ct_local++;
                 break;
-        case T_CONST_INTEGER: // TODO update reg_ct
-                ss0 << "  %" << d << " = alloca i32, align 4";
-                ss1 << "  store i32 " << (-1*is_negative)*itr->getIntValue() << ", i32* %" << d;
-                ss2 << "  %" << d+1 << " = load i32, i32* %" << d << ", align 4";
-                this->scope->writeCode(ss0.str());
-                this->scope->writeCode(ss1.str());
-                this->scope->writeCode(ss2.str());
-                this->scope->reg_ct_local++;
-                this->scope->reg_ct_local++;
+        case T_CONST_INTEGER:
+                temp_reg = this->genAlloca(T_RW_INTEGER);
+                this->genStoreConst(temp_reg, (-1*is_negative)*itr->getIntValue());
+                parameter_type->reg_ct = this->genLoadReg(T_RW_INTEGER, temp_reg);
                 break;
-        case T_CONST_FLOAT: // TODO update reg_ct
-                ss0 << "  %" << d << " = alloca float, align 4";
-                ss1 << "  store float " << (-1*is_negative)*itr->getFloatValue() << ", float* %" << d;
-                ss2 << "  %" << d+1 << " = load float, float* %" << d << ", align 4";
-                this->scope->writeCode(ss0.str());
-                this->scope->writeCode(ss1.str());
-                this->scope->writeCode(ss2.str());
-                this->scope->reg_ct_local++;
-                this->scope->reg_ct_local++;
+        case T_CONST_FLOAT:
+                temp_reg = this->genAlloca(T_RW_FLOAT);
+                this->genStoreConst(temp_reg, (-1*is_negative)*itr->getFloatValue());
+                parameter_type->reg_ct = this->genLoadReg(T_RW_FLOAT, temp_reg);
                 break;
         default:
                 break;

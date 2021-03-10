@@ -131,7 +131,7 @@ void Scope::PushScope(std::string name)
     this->scope_stack.push_back(new_scope_name);
 
     this->scope_reg_ct_stack.push_back(this->reg_ct_local); //cg
-    this->reg_ct_local = 1; //cg
+    this->reg_ct_local = 0; //cg
 }
 
 void Scope::PopScope()

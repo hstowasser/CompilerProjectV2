@@ -30,6 +30,7 @@ typedef struct _symbol_t{
         SymbolType_e type;
         type_holder_t variable_type; // Could also double as function return type
 
+        unsigned int _procedure_ct = 0; // Only set when procecure is added to symbol table
         unsigned int parameter_ct = 0;
         type_holder_t * parameter_type_arr = NULL; // Will need to account for memory leak
 } symbol_t;
@@ -54,8 +55,11 @@ private:
         std::list<unsigned int> scope_reg_ct_stack;
 
         
+
+        
 public:
-        unsigned int reg_ct_local = 1; //TODO consider making private
+        unsigned int procedure_ct = 1; //Number appended to LLVM procedure names for scope management. Always 0 for global procedures
+        unsigned int reg_ct_local = 0; //TODO consider making private
         unsigned int reg_ct_global = 0;
 
         Scope();

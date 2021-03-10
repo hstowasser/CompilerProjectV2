@@ -64,6 +64,8 @@ private:
         void genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_type);
         void genProgramHeader();
         void genProgramBodyEnd();
+        void genProcedureHeader(symbol_t symbol, std::string name);
+        void genProcedureEnd();
         void genConstant(std::list<token_t>::iterator itr, type_holder_t* parameter_type, bool is_negative = false);
 
 

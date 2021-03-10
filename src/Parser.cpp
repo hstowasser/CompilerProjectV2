@@ -611,6 +611,7 @@ bool Parser::parseProcedureDeclaration(std::list<token_t>::iterator *itr, bool g
 
         ret = this->parseProcedureBody(itr);
 
+        genProcedureEnd();
         this->scope->PopScope();
 
         return ret;
@@ -672,15 +673,20 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
                 return false;
         }
 
+        
         if (global){
+                symbol._procedure_ct = 0;
                 this->scope->AddGlobalSymbol(name, symbol);
                 this->scope->PushScope(name);
         }else{
+                symbol._procedure_ct = this->scope->procedure_ct; // Used for code generation
+                this->scope->procedure_ct++;
                 // To allow for recursive calls add procedure symbol to both current and next scope
                 this->scope->AddSymbol(name, symbol);
                 this->scope->PushScope(name);
                 this->scope->AddSymbol(name, symbol);
         }
+        genProcedureHeader(symbol, name);
 
         return ret;
 }
@@ -1296,7 +1302,6 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr, type_holder_t* param
                 ret = true;
                 break;
         case T_IDENTIFIER:
-
                 // Peek ahead to check if it is a procedure call
                 this->next_token(itr); // Move to next token
                 if ((*itr)->type != T_SYM_LPAREN){
