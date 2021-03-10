@@ -67,17 +67,28 @@ bool Parser::AddSymbol_Helper(std::list<token_t>::iterator *itr, bool global, sy
         return true;
 }
 
-bool Parser::FindVariableType_Helper(std::list<token_t>::iterator *itr, type_holder_t* parameter_type)
+bool Parser::FindVariableType_Helper(std::list<token_t>::iterator *itr, type_holder_t* parameter_type, bool* global /*= NULL*/)
 {
-    bool success;
-    std::map<std::string,symbol_t>::iterator temp;
-    temp = this->scope->Find(get_string(itr), &success);
-    if (success){
-            *parameter_type = temp->second.variable_type;
-    } else {
-            error_printf( *itr, "Symbol %s is not defined \n", get_c_string(itr));
-    }
-    return success;
+        bool success;
+        bool global_hold = false;
+        std::map<std::string,symbol_t>::iterator temp;
+        temp = this->scope->FindLocal(get_string(itr), &success);
+        if (success){
+                *parameter_type = temp->second.variable_type;
+
+        } else {
+                temp = this->scope->FindGlobal(get_string(itr), &success);
+                if (success) {
+                        *parameter_type = temp->second.variable_type;
+                        global_hold = true;
+                } else {
+                        error_printf( *itr, "Symbol %s is not defined \n", get_c_string(itr));
+                }
+        }
+        if (global != NULL){
+                *global = global_hold;
+        }
+        return success;
 }
 
 bool Parser::FindSymbol_Helper(std::list<token_t>::iterator *itr, symbol_t* symbol)
@@ -1206,11 +1217,12 @@ bool Parser::parseName(std::list<token_t>::iterator *itr, type_holder_t* paramet
 {
         debug_print_call();
         bool ret = false;
+        bool global;
         // Check for identifier
         if ((*itr)->type == T_IDENTIFIER){
                 // Lookup in symbol table.
                 // Set parameter_type
-                ret = FindVariableType_Helper(itr, parameter_type); // returns false if not found
+                ret = FindVariableType_Helper(itr, parameter_type, &global); // returns false if not found
                 if (!ret){
                         return false;
                 }
@@ -1239,6 +1251,9 @@ bool Parser::parseName(std::list<token_t>::iterator *itr, type_holder_t* paramet
                         ret = false;
                         error_printf( *itr, "Expected closing bracket \n");
                 }
+        } else {
+                // load variable
+                parameter_type->reg_ct = this->genLoadReg(parameter_type->type, parameter_type->reg_ct, global);
         }
         return ret;
 }

@@ -43,7 +43,7 @@ private:
         bool parseArgumentList(std::list<token_t>::iterator *itr, symbol_t procedure_symbol, std::list<unsigned int> *regs);
 
         bool AddSymbol_Helper(std::list<token_t>::iterator *itr, bool global, symbol_t symbol);
-        bool FindVariableType_Helper(std::list<token_t>::iterator *itr, type_holder_t* parameter_type);
+        bool FindVariableType_Helper(std::list<token_t>::iterator *itr, type_holder_t* parameter_type, bool* global = NULL);
         bool FindSymbol_Helper(std::list<token_t>::iterator *itr, symbol_t* symbol);
         bool GetProcedureType(type_holder_t* parameter_type);
         
@@ -54,8 +54,8 @@ private:
 
         // CODE GENERATION
         unsigned int genAlloca(token_type_e type, bool is_arr = false, unsigned int len = 0);
-        unsigned int genLoadReg(token_type_e type, unsigned int location_reg); // %d = load <type>, <type>* %location_reg
-        void genStoreReg(token_type_e type, unsigned int expr_reg, unsigned int dest_reg); // store <type> %expression, <type>* %destination
+        unsigned int genLoadReg(token_type_e type, unsigned int location_reg, bool global = false); // %d = load <type>, <type>* %location_reg
+        void genStoreReg(token_type_e type, unsigned int expr_reg, unsigned int dest_reg, bool global = false); // store <type> %expression, <type>* %destination
         void genStoreConst(unsigned int dest_reg, bool value); // store i8 value, i8* %destination
         void genStoreConst(unsigned int dest_reg, int value); // store i32 value, i32* %destination
         void genStoreConst(unsigned int dest_reg, float value); // store float value, float* %destination
@@ -69,7 +69,6 @@ private:
         unsigned int genProcedureCall(symbol_t symbol, std::string name, std::list<unsigned int> regs);
         void genArgumentsList();
         void genConstant(std::list<token_t>::iterator itr, type_holder_t* parameter_type, bool is_negative = false); // used in parseFactor
-
 
 public:
         Parser(Scope* scope);

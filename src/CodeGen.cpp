@@ -78,27 +78,38 @@ unsigned int Parser::genAlloca(token_type_e type, bool is_arr /*= false*/, unsig
         return d;
 }
 
-unsigned int Parser::genLoadReg(token_type_e type, unsigned int location_reg)
+unsigned int Parser::genLoadReg(token_type_e type, unsigned int location_reg, bool global /*= false*/)
 {
         // %d = load <type>, <type>* %location_reg
         std::ostringstream ss;
         std::string type_str = get_llvm_type(type);
         unsigned int d = this->scope->reg_ct_local;
 
-        ss << "  %" << d << " = load " << type_str << ", " << type_str << "* %" << location_reg;
+        ss << "  %" << d << " = load " << type_str << ", " << type_str << "* ";
+        if (global){
+                ss << "@" << location_reg;
+        } else {
+                ss << "%" << location_reg;
+        }
+        
 
         this->scope->writeCode(ss.str());
         this->scope->reg_ct_local++;
         return d;
 }
 
-void Parser::genStoreReg(token_type_e type, unsigned int expr_reg, unsigned int dest_reg)
+void Parser::genStoreReg(token_type_e type, unsigned int expr_reg, unsigned int dest_reg, bool global /*= false*/)
 {
         // store <type> %expression, <type>* %destination
         std::ostringstream ss;
         std::string type_str = get_llvm_type(type);
 
-        ss << "  store " << type_str << " %" << expr_reg << ", " << type_str << "* %" << dest_reg;
+        ss << "  store " << type_str << " %" << expr_reg << ", " << type_str << "* ";
+        if (global){
+                ss << "@" << dest_reg;
+        } else {
+                ss << "%" << dest_reg;
+        }
 
         this->scope->writeCode(ss.str());
 }
@@ -210,24 +221,13 @@ void Parser::genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_
 
         unsigned int d = this->scope->reg_ct_local;
 
-        if (dest_type._is_global){
-                // TODO Implement GEP
-                // update dest_type.reg_ct
-        }
-
-        if (expr_type._is_global){
-                // TODO Implement GEP
-                // load value
-                // update expr_type.reg_ct
-        }
-
         if (dest_type.is_array){
                 // TODO Implement memcpy
         } else {
                 if (type_holder_cmp(dest_type, expr_type)){
                         // Both are the same
                         // store <type> %expression, <type>* %destination
-                        genStoreReg(dest_type.type, d-1, dest_type.reg_ct);                        
+                        genStoreReg(dest_type.type, d-1, dest_type.reg_ct, dest_type._is_global);                      
                 } else if ( ((expr_type.type == T_RW_INTEGER) || (expr_type.type == T_RW_FLOAT)) &&
                         ((dest_type.type == T_RW_INTEGER) || (dest_type.type == T_RW_FLOAT))) {
                         // Combinations of int and float are allowed
