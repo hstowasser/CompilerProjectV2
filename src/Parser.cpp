@@ -170,6 +170,7 @@ bool Parser::parseProgramBody(std::list<token_t>::iterator *itr)
                 this->next_token(itr); // Move to next token
 
                 if ((*itr)->type == T_RW_PROGRAM){
+                        genProgramBodyEnd();
                         this->next_token(itr); // Move to next token
                         ret = true; // TODO Check that this is correct
                 }else{
@@ -205,11 +206,6 @@ bool Parser::parseDestination(std::list<token_t>::iterator *itr, type_holder_t* 
 
         // if open bracket
         if ((*itr)->type == T_SYM_LBRACKET){
-
-                if (parameter_type->type == T_RW_STRING){
-                        error_printf( *itr, "Indexing not supported for strings\n");
-                        return false;
-                }
         
                 if (parameter_type->is_array == false){
                         error_printf( *itr, "Identifier is not an array\n");
@@ -224,17 +220,17 @@ bool Parser::parseDestination(std::list<token_t>::iterator *itr, type_holder_t* 
                 type_holder_t expr_type;
 
                 // then parse expression
-                ret = this->parseExpression(itr, &expr_type); // Todo check that this is an integer
+                ret = this->parseExpression(itr, &expr_type);
                 if ( !ret ){
                         return false;
                 }
 
-                if ( expr_type.type != T_RW_INTEGER ){//&& expr_type.type != T_RW_ENUM){
+                if ( expr_type.type != T_RW_INTEGER ){
                         error_printf( *itr, "Array index is invalid type \n");
                         return false;
                 }
 
-                
+                // TODO Add code generation for []
 
                 // check close bracket
                 if ((*itr)->type == T_SYM_RBRACKET){
@@ -267,9 +263,7 @@ bool Parser::parseAssignmentStatement(std::list<token_t>::iterator *itr)
         }else{
                 error_printf( *itr, "Expected \":=\" \n");
                 return false;
-        }
-
-        // TODO for array assignments check that lengths are the same
+        }        
 
         // parse expression
         ret = this->parseExpression(itr, &expr_type); 
@@ -299,9 +293,11 @@ bool Parser::parseAssignmentStatement(std::list<token_t>::iterator *itr)
                 // store <destination_type> <expression>, <destination_type>* <destination_ptr>
                 // store <i32/float/bool> %current, <i32/float/bool>* symbol_table_lookup_%reg
         // if string
-                // change pointer in symbol table
+                // change pointer
         // if array
                 // use llvm.memcpy
+
+        genAssignmentStatement(dest_type, expr_type);
 
         return ret; 
 }
@@ -798,6 +794,8 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
                 }
         }
 
+        genVariableDeclaration( &symbol, global); // Generate code
+
         if (global){
                 this->scope->AddGlobalSymbol(name, symbol);
         }else{
@@ -855,6 +853,7 @@ bool Parser::parseProgramHeader(std::list<token_t>::iterator *itr)
         if ((*itr)->type == T_IDENTIFIER){
                 // Create scope for program
                 this->scope->PushScope(*(*itr)->getStringValue());
+                this->genProgramHeader();
 
                 this->next_token(itr); // Move to next token
         }else{

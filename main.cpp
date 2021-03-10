@@ -23,17 +23,18 @@ int main()
         Parser *parser = new Parser(scope);
         list<token_t> token_list;
 
-        scanner->scanFile("test.txt", &token_list);
+        scanner->scanFile("test1.txt", &token_list);
         delete scanner;
 
-        list<token_t>::iterator itr;
-        for ( itr = token_list.begin(); itr != token_list.end(); itr++){
-                print_token(*itr);
-        }
+        // list<token_t>::iterator itr;
+        // for ( itr = token_list.begin(); itr != token_list.end(); itr++){
+        //         print_token(*itr);
+        // }
 
         parser->parse(token_list);
 
         scope->PrintScope();
+        scope->PrintCode();
 
         destroy_list(&token_list);
 

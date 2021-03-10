@@ -41,7 +41,7 @@ private:
         bool parseProcedureCall(std::list<token_t>::iterator *itr, type_holder_t* parameter_type);
         
         bool parseArgumentList(std::list<token_t>::iterator *itr, symbol_t procedure_symbol);
-        
+
         bool AddSymbol_Helper(std::list<token_t>::iterator *itr, bool global, symbol_t symbol);
         bool FindVariableType_Helper(std::list<token_t>::iterator *itr, type_holder_t* parameter_type);
         bool FindSymbol_Helper(std::list<token_t>::iterator *itr, symbol_t* symbol);
@@ -51,6 +51,13 @@ private:
         std::list<token_t>::iterator itr_end;
 
         Scope* scope;
+
+        // CODE GENERATION
+        void genVariableDeclaration(symbol_t* symbol, bool global);
+        void genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_type);
+        void genProgramHeader();
+        void genProgramBodyEnd();
+
 
 public:
         Parser(Scope* scope);

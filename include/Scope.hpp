@@ -21,6 +21,9 @@ typedef struct _type_holder_t{
         token_type_e type; // T_RW_INTEGER T_RW_FLOAT T_RW_BOOL T_RW_STRING are the only valid values
         bool is_array = false;
         unsigned int array_length = 0;
+
+        bool _is_global = false; //Only set when added to global symbol table
+        unsigned int reg_ct = 0;
 } type_holder_t;
 
 typedef struct _symbol_t{
@@ -44,7 +47,17 @@ private:
 
         std::string current_procedure_name;
         std::string current_scope_name;
+
+        // CODE GENERATION
+        std::list<std::string> global_code;
+        std::map<std::string, std::list<std::string>> local_code_map;
+        std::list<unsigned int> scope_reg_ct_stack;
+
+        
 public:
+        unsigned int reg_ct_local = 1; //TODO consider making private
+        unsigned int reg_ct_global = 1;
+
         Scope();
         // TODO add destructor that deletes memory allocated to parameter_type_arr
 
@@ -63,5 +76,9 @@ public:
         // void SetValueType(std::string, );
 
         void PrintScope(); //For Debugging
+        void PrintCode();
+
+        // CODE GENERATION
+        void writeCode(std::string line, bool global = false);
 
 };

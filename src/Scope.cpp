@@ -119,13 +119,19 @@ void Scope::PushScope(std::string name)
 {
     std::string new_scope_name = this->current_scope_name + name;
     symbol_table_t temp;
+    std::list<std::string> code_list; //cg Code Generation
+
     this->symbol_tables[new_scope_name] = temp;
+    this->local_code_map[new_scope_name] = code_list; //cg
 
     this->current_procedure_name = name;
     this->current_scope_name = new_scope_name;
 
     this->procedure_name_stack.push_back(name);
     this->scope_stack.push_back(new_scope_name);
+
+    this->scope_reg_ct_stack.push_back(this->reg_ct_local); //cg
+    this->reg_ct_local = 1; //cg
 }
 
 void Scope::PopScope()
@@ -134,6 +140,9 @@ void Scope::PopScope()
     this->current_scope_name = this->scope_stack.back();
     this->procedure_name_stack.pop_back();
     this->current_procedure_name = this->procedure_name_stack.back();
+
+    this->reg_ct_local = this->scope_reg_ct_stack.back(); //cg
+    this->scope_reg_ct_stack.pop_back(); //cg
 }
 
 std::string Scope::getProcedureName()
@@ -180,6 +189,16 @@ std::map<std::string,symbol_t>::iterator Scope::Find(std::string name, bool* suc
         ret = this->FindGlobal(name, success);
     }
     return ret;
+}
+
+void Scope::writeCode(std::string line, bool global /*= false*/)
+{
+    if (global) {
+        this->global_code.push_back(line);
+    } else {
+        this->local_code_map[this->current_scope_name].push_back(line);
+    }
+    
 }
 
 void Scope::PrintScope()
@@ -233,5 +252,24 @@ void Scope::PrintScope()
             }
             std::cout << std::endl;
         }
+    }
+}
+
+void PrintList(std::list<std::string> list)
+{
+    std::list<std::string>::iterator it;
+    for (it = list.begin(); it != list.end(); it++){
+        std::cout << *it << std::endl;
+    }
+}
+
+void Scope::PrintCode(){
+    std::cout << ";******************** LLVM Assembly ********************" << std::endl;
+    PrintList(this->global_code);
+
+    std::map<std::string, std::list<std::string>>::iterator it;
+    for (it = this->local_code_map.begin(); it != this->local_code_map.end(); it++){
+        std::cout << ";******************** " << it->first << " ********************" << std::endl;
+        PrintList(it->second);
     }
 }
