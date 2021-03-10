@@ -1118,7 +1118,7 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr, type_holder_t
                 // Should never reach here
         }
 
-        this->genProcedureCall(temp_symbol, name, regs);
+        parameter_type->reg_ct = this->genProcedureCall(temp_symbol, name, regs);
 
         return ret;
 }

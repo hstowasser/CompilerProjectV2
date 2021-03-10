@@ -334,7 +334,7 @@ void Parser::genConstant(std::list<token_t>::iterator itr, type_holder_t* parame
         }
 }
 
-void Parser::genProcedureCall(symbol_t symbol, std::string name, std::list<unsigned int> regs)
+unsigned int Parser::genProcedureCall(symbol_t symbol, std::string name, std::list<unsigned int> regs)
 {
         std::ostringstream ss;
         unsigned int d = this->scope->reg_ct_local;
@@ -353,4 +353,5 @@ void Parser::genProcedureCall(symbol_t symbol, std::string name, std::list<unsig
         
         this->scope->writeCode(ss.str());
         this->scope->reg_ct_local++;
+        return d;
 }

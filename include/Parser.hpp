@@ -66,7 +66,7 @@ private:
         void genProgramBodyEnd();
         void genProcedureHeader(symbol_t symbol, std::string name);
         void genProcedureEnd();
-        void genProcedureCall(symbol_t symbol, std::string name, std::list<unsigned int> regs);
+        unsigned int genProcedureCall(symbol_t symbol, std::string name, std::list<unsigned int> regs);
         void genArgumentsList();
         void genConstant(std::list<token_t>::iterator itr, type_holder_t* parameter_type, bool is_negative = false); // used in parseFactor
 

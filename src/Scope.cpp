@@ -94,6 +94,11 @@ Scope::Scope()
     putString.parameter_type_arr[0].type = T_RW_STRING;
     putString.variable_type.type = T_RW_BOOL; //Return type
     this->AddGlobalSymbol(putStringName,putString);
+    this->writeCode("define i8 @PUTSTRING0(i8* %0) {", true);
+    this->writeCode("	%2 = getelementptr [4 x i8], [4 x i8]* @.str2, i64 0, i64 0", true);
+    this->writeCode("	call void (i8*, ...) @printf( i8* %2, i8* %0)", true);
+    this->writeCode("	ret i8 0", true);
+    this->writeCode("}", true);
 
     // sqrt(integer Value): float
     symbol_t sqrt;
