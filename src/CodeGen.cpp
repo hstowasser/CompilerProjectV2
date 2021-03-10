@@ -138,14 +138,16 @@ void Parser::genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_
 
         if (dest_type._is_global){
                 // TODO Implement GEP
+                // update dest_type.reg_ct
         }
 
         if (expr_type._is_global){
                 // TODO Implement GEP
+                // update expr_type.reg_ct
         }
 
         if (dest_type.is_array){
-                // TODO Implement malloc
+                // TODO Implement memcpy
         } else {
                 if (type_holder_cmp(dest_type, expr_type)){
                         // Both are the same
@@ -175,4 +177,57 @@ void Parser::genProgramBodyEnd()
 {
         this->scope->writeCode("  ret i32 0");
         this->scope->writeCode("}");
+}
+
+void Parser::genConstant(std::list<token_t>::iterator itr, bool is_negative /*= false*/)
+{
+        std::ostringstream ss0;
+        std::ostringstream ss1;
+        std::string init;
+        std::string store;
+
+        std::string temp;
+
+        unsigned int g = this->scope->reg_ct_global;
+        unsigned int d = this->scope->reg_ct_local;
+
+        switch (itr->type){
+        case T_RW_TRUE:
+                ss0 << "  %" << d << " = alloca i8";
+                ss1 << "  store i8 1, i8* %" << d;
+                this->scope->writeCode(ss0.str());
+                this->scope->writeCode(ss1.str());
+                break;
+        case T_RW_FALSE:
+                ss0 << "  %" << d << " = alloca i8";
+                ss1 << "  store i8 1, i8* %" << d;
+                this->scope->writeCode(ss0.str());
+                this->scope->writeCode(ss1.str());
+                break;
+        case T_CONST_STRING:
+                temp = *(itr->getStringValue());
+                ss0 << "@" << g << " = constant [" << temp.length()+1 << " x i8] c\"" << temp << "\\00\"";
+                ss1 << "  %" << d << " = getelementptr [" << temp.length()+1 << " x i8], [" << temp.length()+1 << " x i8]* @" << g << ", i64 0, i64 0";
+                this->scope->reg_ct_global++;
+                this->scope->writeCode(ss0.str(), true);
+                this->scope->writeCode(ss1.str());
+                break;
+        case T_CONST_INTEGER:
+                ss0 << "  %" << d << " = alloca i32, align 4";
+                ss1 << "  store i32 " << (-1*is_negative)*itr->getIntValue() << ", i32* %" << d;
+                this->scope->writeCode(ss0.str());
+                this->scope->writeCode(ss1.str());
+                break;
+        case T_CONST_FLOAT:
+                ss0 << "  %" << d << " = alloca float, align 4";
+                ss1 << "  store float " << (-1*is_negative)*itr->getFloatValue() << ", float* %" << d;
+                this->scope->writeCode(ss0.str());
+                this->scope->writeCode(ss1.str());
+                break;
+        default:
+                break;
+        }
+        
+        this->scope->reg_ct_local++;
+
 }

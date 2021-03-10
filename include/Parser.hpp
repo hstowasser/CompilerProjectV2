@@ -57,6 +57,7 @@ private:
         void genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_type);
         void genProgramHeader();
         void genProgramBodyEnd();
+        void genConstant(std::list<token_t>::iterator itr, bool is_negative = false);
 
 
 public:
