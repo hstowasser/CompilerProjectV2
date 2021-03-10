@@ -129,12 +129,30 @@ std::string get_llvm_type(type_holder_t type)
         }
 }
 
+std::string get_llvm_align(type_holder_t type)
+{
+        switch (type.type){
+        case T_RW_INTEGER:
+                return ", align 4";
+        case T_RW_FLOAT:
+                return ", align 4";
+        case T_RW_BOOL:
+                return "";
+        case T_RW_STRING:
+                return ", align 8";
+        default:
+                return "";
+        }
+}
+
 void Parser::genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_type)
 {
-        std::ostringstream ss;
-        std::string str;
+        std::ostringstream ss0;
+        std::ostringstream ss1;
 
         std::string dtype_str = get_llvm_type(dest_type);
+
+        unsigned int d = this->scope->reg_ct_local;
 
         if (dest_type._is_global){
                 // TODO Implement GEP
@@ -150,9 +168,20 @@ void Parser::genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_
                 // TODO Implement memcpy
         } else {
                 if (type_holder_cmp(dest_type, expr_type)){
+                        // TODO This does not work for string constants
                         // Both are the same
                         // store <type> %expression, <type>* %destination
-                        ss << "  store " << dtype_str << " %" << expr_type.reg_ct << ", " << dtype_str << "* %" << dest_type.reg_ct;
+                        if (dest_type.type == T_RW_STRING){
+                                ss1 << "  store " << dtype_str << " %" << d-1 << ", " << dtype_str << "* %" << dest_type.reg_ct;
+                                this->scope->writeCode(ss1.str());
+                        }else{
+                                ss0 << "  %" << d << " = load " << dtype_str << ", " << dtype_str << "* %" << expr_type.reg_ct << get_llvm_align(dest_type);
+                                ss1 << "  store " << dtype_str << " %" << d << ", " << dtype_str << "* %" << dest_type.reg_ct;
+                                this->scope->writeCode(ss0.str());
+                                this->scope->writeCode(ss1.str());
+                                this->scope->reg_ct_local++;
+                        }
+                        
                 } else if ( ((expr_type.type == T_RW_INTEGER) || (expr_type.type == T_RW_FLOAT)) &&
                         ((dest_type.type == T_RW_INTEGER) || (dest_type.type == T_RW_FLOAT))) {
                         // Combinations of int and float are allowed
@@ -163,9 +192,7 @@ void Parser::genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_
                         // TODO Typecast to destination
                 }
         }
-
-        str = ss.str();
-        this->scope->writeCode(str);
+        
 }
 
 void Parser::genProgramHeader()

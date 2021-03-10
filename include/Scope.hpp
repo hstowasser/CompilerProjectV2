@@ -56,7 +56,7 @@ private:
         
 public:
         unsigned int reg_ct_local = 1; //TODO consider making private
-        unsigned int reg_ct_global = 1;
+        unsigned int reg_ct_global = 0;
 
         Scope();
         // TODO add destructor that deletes memory allocated to parameter_type_arr
