@@ -28,6 +28,13 @@ Scope::Scope()
 
     // INITIALIZE BUILT IN FUNCTIONS
 
+    this->writeCode("@.str0 = private unnamed_addr constant [4 x i8] c\"%d\\0A\\00\", align 1", true);
+    this->writeCode("@.str1 = private unnamed_addr constant [4 x i8] c\"%f\\0A\\00\", align 1", true);
+    this->writeCode("@.str2 = private unnamed_addr constant [4 x i8] c\"%s\\0A\\00\", align 1", true);
+
+    this->writeCode("declare void @printf( i8*, ...)", true);
+    this->writeCode("declare void @scanf( i8*, ...)", true);
+
     // putBool(bool Value): bool
     symbol_t putBool;
     std::string putBoolName = "PUTBOOL";
@@ -38,6 +45,11 @@ Scope::Scope()
     putBool.parameter_type_arr[0].type = T_RW_BOOL;
     putBool.variable_type.type = T_RW_BOOL;
     this->AddGlobalSymbol(putBoolName,putBool);
+    this->writeCode("define i8 @PUTBOOL0(i8 %0) {", true);
+    this->writeCode("  %2 = getelementptr [4 x i8], [4 x i8]* @.str0, i64 0, i64 0", true);
+    this->writeCode("  call void (i8*, ...) @printf( i8* %2, i8 %0)", true);
+    this->writeCode("  ret i8 0", true);
+    this->writeCode("}", true);
 
     // putInteger(integer Value): bool
     symbol_t putInteger;
@@ -49,6 +61,11 @@ Scope::Scope()
     putInteger.parameter_type_arr[0].type = T_RW_INTEGER;
     putInteger.variable_type.type = T_RW_BOOL; //Return type
     this->AddGlobalSymbol(putIntegerName,putInteger);
+    this->writeCode("define i8 @PUTINTEGER0(i32 %0) {", true);
+    this->writeCode("  %2 = getelementptr [4 x i8], [4 x i8]* @.str0, i64 0, i64 0", true);
+    this->writeCode("  call void (i8*, ...) @printf( i8* %2, i32 %0)", true);
+    this->writeCode("  ret i8 0", true);
+    this->writeCode("}", true);
 
     // putFloat(float Value): bool
     symbol_t putFloat;
@@ -60,6 +77,12 @@ Scope::Scope()
     putFloat.parameter_type_arr[0].type = T_RW_FLOAT;
     putFloat.variable_type.type = T_RW_BOOL; //Return type
     this->AddGlobalSymbol(putFloatName,putFloat);
+    this->writeCode("define i8 @PUTFLOAT0(float %0) {", true);
+    this->writeCode("  %2 = fpext float %0 to double", true);
+    this->writeCode("  %3 = getelementptr [4 x i8], [4 x i8]* @.str1, i64 0, i64 0", true);
+    this->writeCode("  call void (i8*, ...) @printf( i8* %3, double %2)", true);
+    this->writeCode("  ret i8 0", true);
+    this->writeCode("}", true);
 
     // putString(string Value): bool
     symbol_t putString;

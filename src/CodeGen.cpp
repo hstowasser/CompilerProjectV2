@@ -1,5 +1,6 @@
 #include "Parser.hpp"
 #include <sstream>
+#include <cstring>
 
 std::string get_llvm_type(token_type_e type)
 {
@@ -31,6 +32,22 @@ unsigned int get_llvm_align(token_type_e type)
         default:
                 return 0;
         }
+}
+
+std::string getHex(float x)
+{
+        std::ostringstream ss;
+        constexpr char hexmap[] = {'0', '1', '2', '3', '4', '5', '6', '7',
+                           '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+
+        double holder = x; // LLVM IR uses double percision constants
+        unsigned long temp;
+        memcpy(&temp,&holder, sizeof(double));
+        ss << "0x";
+        for ( int i = 15; i >= 0; i-- ){
+                ss << hexmap[(temp >> i*4) & 0xF];
+        }
+        return ss.str();
 }
 
 unsigned int Parser::genAlloca(token_type_e type, bool is_arr /*= false*/, unsigned int len /*= 0*/)
@@ -113,7 +130,7 @@ void Parser::genStoreConst(unsigned int dest_reg, float value)
         std::ostringstream ss;
         std::string type_str = get_llvm_type(T_RW_FLOAT);
 
-        ss << "  store " << type_str << " " << value << ", " << type_str << "* %" << dest_reg;
+        ss << "  store " << type_str << " " << getHex(value) << ", " << type_str << "* %" << dest_reg;
 
         this->scope->writeCode(ss.str());
 }
@@ -265,6 +282,7 @@ void Parser::genProcedureEnd()
         this->scope->writeCode("}");
 }
 
+
 void Parser::genConstant(std::list<token_t>::iterator itr, type_holder_t* parameter_type, bool is_negative /*= false*/)
 {
         std::ostringstream ss0;
@@ -303,12 +321,12 @@ void Parser::genConstant(std::list<token_t>::iterator itr, type_holder_t* parame
                 break;
         case T_CONST_INTEGER:
                 temp_reg = this->genAlloca(T_RW_INTEGER);
-                this->genStoreConst(temp_reg, (-1*is_negative)*itr->getIntValue());
+                this->genStoreConst(temp_reg, (1-2*is_negative)*itr->getIntValue());
                 parameter_type->reg_ct = this->genLoadReg(T_RW_INTEGER, temp_reg);
                 break;
         case T_CONST_FLOAT:
                 temp_reg = this->genAlloca(T_RW_FLOAT);
-                this->genStoreConst(temp_reg, (-1*is_negative)*itr->getFloatValue());
+                this->genStoreConst(temp_reg, (1-2*is_negative)*itr->getFloatValue());
                 parameter_type->reg_ct = this->genLoadReg(T_RW_FLOAT, temp_reg);
                 break;
         default:
