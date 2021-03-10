@@ -171,16 +171,8 @@ void Parser::genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_
                         // TODO This does not work for string constants
                         // Both are the same
                         // store <type> %expression, <type>* %destination
-                        if (dest_type.type == T_RW_STRING){
-                                ss1 << "  store " << dtype_str << " %" << d-1 << ", " << dtype_str << "* %" << dest_type.reg_ct;
-                                this->scope->writeCode(ss1.str());
-                        }else{
-                                ss0 << "  %" << d << " = load " << dtype_str << ", " << dtype_str << "* %" << expr_type.reg_ct << get_llvm_align(dest_type);
-                                ss1 << "  store " << dtype_str << " %" << d << ", " << dtype_str << "* %" << dest_type.reg_ct;
-                                this->scope->writeCode(ss0.str());
-                                this->scope->writeCode(ss1.str());
-                                this->scope->reg_ct_local++;
-                        }
+                        ss1 << "  store " << dtype_str << " %" << d-1 << ", " << dtype_str << "* %" << dest_type.reg_ct;
+                        this->scope->writeCode(ss1.str());
                         
                 } else if ( ((expr_type.type == T_RW_INTEGER) || (expr_type.type == T_RW_FLOAT)) &&
                         ((dest_type.type == T_RW_INTEGER) || (dest_type.type == T_RW_FLOAT))) {
@@ -210,10 +202,12 @@ void Parser::genConstant(std::list<token_t>::iterator itr, bool is_negative /*= 
 {
         std::ostringstream ss0;
         std::ostringstream ss1;
+        std::ostringstream ss2;
         std::string init;
         std::string store;
 
         std::string temp;
+        
 
         unsigned int g = this->scope->reg_ct_global;
         unsigned int d = this->scope->reg_ct_local;
@@ -222,14 +216,22 @@ void Parser::genConstant(std::list<token_t>::iterator itr, bool is_negative /*= 
         case T_RW_TRUE:
                 ss0 << "  %" << d << " = alloca i8";
                 ss1 << "  store i8 1, i8* %" << d;
+                ss2 << "  %" << d+1 << " = load i8, i8* %" << d;
                 this->scope->writeCode(ss0.str());
                 this->scope->writeCode(ss1.str());
+                this->scope->writeCode(ss2.str());
+                this->scope->reg_ct_local++;
+                this->scope->reg_ct_local++;
                 break;
         case T_RW_FALSE:
                 ss0 << "  %" << d << " = alloca i8";
                 ss1 << "  store i8 1, i8* %" << d;
+                ss2 << "  %" << d+1 << " = load i8, i8* %" << d;
                 this->scope->writeCode(ss0.str());
                 this->scope->writeCode(ss1.str());
+                this->scope->writeCode(ss2.str());
+                this->scope->reg_ct_local++;
+                this->scope->reg_ct_local++;
                 break;
         case T_CONST_STRING:
                 temp = *(itr->getStringValue());
@@ -238,23 +240,32 @@ void Parser::genConstant(std::list<token_t>::iterator itr, bool is_negative /*= 
                 this->scope->reg_ct_global++;
                 this->scope->writeCode(ss0.str(), true);
                 this->scope->writeCode(ss1.str());
+                this->scope->reg_ct_local++;
                 break;
         case T_CONST_INTEGER:
                 ss0 << "  %" << d << " = alloca i32, align 4";
                 ss1 << "  store i32 " << (-1*is_negative)*itr->getIntValue() << ", i32* %" << d;
+                ss2 << "  %" << d+1 << " = load i32, i32* %" << d << ", align 4";
                 this->scope->writeCode(ss0.str());
                 this->scope->writeCode(ss1.str());
+                this->scope->writeCode(ss2.str());
+                this->scope->reg_ct_local++;
+                this->scope->reg_ct_local++;
                 break;
         case T_CONST_FLOAT:
                 ss0 << "  %" << d << " = alloca float, align 4";
                 ss1 << "  store float " << (-1*is_negative)*itr->getFloatValue() << ", float* %" << d;
+                ss2 << "  %" << d+1 << " = load float, float* %" << d << ", align 4";
                 this->scope->writeCode(ss0.str());
                 this->scope->writeCode(ss1.str());
+                this->scope->writeCode(ss2.str());
+                this->scope->reg_ct_local++;
+                this->scope->reg_ct_local++;
                 break;
         default:
                 break;
         }
         
-        this->scope->reg_ct_local++;
+        
 
 }
