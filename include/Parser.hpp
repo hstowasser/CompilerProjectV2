@@ -53,11 +53,18 @@ private:
         Scope* scope;
 
         // CODE GENERATION
+        unsigned int genAlloca(token_type_e type, bool is_arr = false, unsigned int len = 0);
+        unsigned int genLoadReg(token_type_e type, unsigned int location_reg); // %d = load <type>, <type>* %location_reg
+        void genStoreReg(token_type_e type, unsigned int expr_reg, unsigned int dest_reg); // store <type> %expression, <type>* %destination
+        void genStoreConst(unsigned int dest_reg, bool value); // store i8 value, i8* %destination
+        void genStoreConst(unsigned int dest_reg, int value); // store i32 value, i32* %destination
+        void genStoreConst(unsigned int dest_reg, float value); // store float value, float* %destination
+
         void genVariableDeclaration(symbol_t* symbol, bool global);
         void genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_type);
         void genProgramHeader();
         void genProgramBodyEnd();
-        void genConstant(std::list<token_t>::iterator itr, bool is_negative = false);
+        void genConstant(std::list<token_t>::iterator itr, type_holder_t* parameter_type, bool is_negative = false);
 
 
 public:

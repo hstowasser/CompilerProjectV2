@@ -162,6 +162,7 @@ void Scope::AddSymbol(std::string name, symbol_t symbol)
 
 void Scope::AddGlobalSymbol(std::string name, symbol_t symbol)
 {
+    symbol.variable_type._is_global=true;
     this->global_symbol_table[name] = symbol;
 }
 

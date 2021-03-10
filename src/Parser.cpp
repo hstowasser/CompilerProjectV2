@@ -1251,26 +1251,26 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr, type_holder_t* param
                 }
                 break;
         case T_RW_TRUE:
-                genConstant(*itr);
+                genConstant(*itr, parameter_type);
                 parameter_type->type = T_RW_BOOL;
                 this->next_token(itr); // Move to next token
                 ret = true;
                 break;
         case T_RW_FALSE:
-                genConstant(*itr);
+                genConstant(*itr, parameter_type);
                 parameter_type->type = T_RW_BOOL;
                 this->next_token(itr); // Move to next token
                 ret = true;
                 break;
         case T_CONST_STRING:
-                genConstant(*itr);
+                genConstant(*itr, parameter_type);
                 parameter_type->type = T_RW_STRING;
                 this->next_token(itr); // Move to next token
                 ret = true;
                 break;
         case T_OP_ARITH_MINUS:
                 this->next_token(itr); // Move to next token
-                genConstant(*itr, true);
+                genConstant(*itr, parameter_type, true);
                 if ((*itr)->type == T_CONST_INTEGER){
                         parameter_type->type = T_RW_INTEGER;
                         this->next_token(itr); // Move to next token
@@ -1284,13 +1284,13 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr, type_holder_t* param
                 }
                 break;
         case T_CONST_INTEGER:
-                genConstant(*itr);
+                genConstant(*itr, parameter_type);
                 parameter_type->type = T_RW_INTEGER;
                 this->next_token(itr); // Move to next token
                 ret = true;
                 break;
         case T_CONST_FLOAT:
-                genConstant(*itr);
+                genConstant(*itr, parameter_type);
                 parameter_type->type = T_RW_FLOAT;
                 this->next_token(itr); // Move to next token
                 ret = true;
