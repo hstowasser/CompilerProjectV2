@@ -340,6 +340,9 @@ bool Parser::parseIfStatement(std::list<token_t>::iterator *itr)
         debug_print_call();
         bool ret = false;
         type_holder_t expr_type;
+        unsigned int if_label;
+        unsigned int else_label;
+        unsigned int end_label;
 
         if ((*itr)->type == T_RW_IF){
                 this->next_token(itr); // Move to next token
@@ -366,6 +369,16 @@ bool Parser::parseIfStatement(std::list<token_t>::iterator *itr)
                 return false;
         }
 
+        // TODO generate code
+        if (expr_type.type == T_RW_INTEGER){
+                expr_type.reg_ct = this->genIntToBool(expr_type.reg_ct); // Convert to bool
+        }
+        if_label = this->scope->NewLabel();
+        else_label = this->scope->NewLabel();
+        end_label = this->scope->NewLabel();
+
+        this->genIfHead( expr_type.reg_ct, if_label, else_label);
+
         if ((*itr)->type == T_SYM_RPAREN){
                 this->next_token(itr); // Move to next token
         }else{
@@ -391,6 +404,8 @@ bool Parser::parseIfStatement(std::list<token_t>::iterator *itr)
                 }
         }
 
+        this->genIfElse(else_label, end_label);
+
         // if "else"
         if ((*itr)->type == T_RW_ELSE){
                 this->next_token(itr); // Move to next token
@@ -406,6 +421,8 @@ bool Parser::parseIfStatement(std::list<token_t>::iterator *itr)
                         }
                 }
         }
+
+        this->genIfEnd(end_label);
 
         if ((*itr)->type == T_RW_END){
                 this->next_token(itr); // Move to next token

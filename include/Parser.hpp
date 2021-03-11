@@ -84,6 +84,10 @@ private:
         unsigned int genArithOp(token_type_e op, token_type_e type_a, unsigned int reg_a, token_type_e type_b, unsigned int reg_b);
         unsigned int genExpression(token_type_e op, unsigned int reg_a, unsigned int reg_b);
 
+        void genIfHead(unsigned int reg, unsigned int if_label, unsigned int else_label);
+        void genIfElse(unsigned int else_label, unsigned int end_label);
+        void genIfEnd(unsigned int end_label);
+
         std::list<std::tuple<std::string, symbol_t>> paramSymbolBuffer;
 
 public:

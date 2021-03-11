@@ -41,6 +41,7 @@ typedef std::map<std::string,symbol_t> symbol_table_t; // rename to symbol table
 
 class Scope{
 private:
+        unsigned int label_ct = 0;
         symbol_table_t global_symbol_table;
 
         std::map<std::string, symbol_table_t> symbol_tables; // Need some kind of associated identifier
@@ -73,6 +74,8 @@ public:
 
         void PushScope(std::string);
         void PopScope();
+
+        unsigned int NewLabel();
 
         std::map<std::string,symbol_t>::iterator FindLocal(std::string, bool* success);
         std::map<std::string,symbol_t>::iterator FindGlobal(std::string, bool* success);

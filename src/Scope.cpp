@@ -304,3 +304,8 @@ void Scope::PrintCode(){
         PrintList(it->second);
     }
 }
+
+unsigned int Scope::NewLabel()
+{
+    return this->label_ct++;
+}

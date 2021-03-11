@@ -729,3 +729,49 @@ void Parser::genReturn(token_type_e type, unsigned int reg)
 
         this->scope->writeCode(ss.str());
 }
+
+void Parser::genIfHead(unsigned int reg, unsigned int if_label, unsigned int else_label)
+{
+        std::ostringstream ss0;
+        std::ostringstream ss1;
+        std::ostringstream ss2;
+
+        unsigned int d = this->scope->reg_ct_local;
+
+        // %5 = trunc i8 %4 to i1
+        ss0 << "  %" << d << " = trunc i8 %" << reg << " to i1";
+        this->scope->reg_ct_local++;
+
+        // br i1 %5, label %6, label %10
+        ss1 << "  br i1 %" << d << ", label %L" << if_label << ", label %L" << else_label;
+
+        ss2 << "L" << if_label << ":";
+
+        this->scope->writeCode(ss0.str());
+        this->scope->writeCode(ss1.str());
+        this->scope->writeCode(ss2.str());
+}
+
+void Parser::genIfElse(unsigned int else_label, unsigned int end_label)
+{
+        std::ostringstream ss0;
+        std::ostringstream ss1;
+
+        ss0 << "  br label %L" << end_label;
+        ss1 << "L" << else_label << ":";
+
+        this->scope->writeCode(ss0.str());
+        this->scope->writeCode(ss1.str());
+}
+
+void Parser::genIfEnd(unsigned int end_label)
+{
+        std::ostringstream ss0;
+        std::ostringstream ss1;
+
+        ss0 << "  br label %L" << end_label;
+        ss1 << "L" << end_label << ":";
+
+        this->scope->writeCode(ss0.str());
+        this->scope->writeCode(ss1.str());
+}
