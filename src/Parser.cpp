@@ -975,12 +975,14 @@ bool Parser::parseArithOp(std::list<token_t>::iterator *itr, type_holder_t* para
         bool ret = false;
         type_holder_t temp_relation;
         type_holder_t temp_arithop;
+        token_type_e op;
 
         ret = this->parseRelation(itr, &temp_relation); // TODO test type checking
         if (ret){
                 if (((*itr)->type == T_OP_ARITH_MINUS) ||
                     ((*itr)->type == T_OP_ARITH_PLUS))
                 {
+                        op = (*itr)->type;
                         // Then it's an ArithOp?
                         this->next_token(itr); // Move to next token
                         ret = this->parseArithOp(itr, &temp_arithop);
@@ -993,6 +995,8 @@ bool Parser::parseArithOp(std::list<token_t>::iterator *itr, type_holder_t* para
                                 }else{
                                         parameter_type->type = T_RW_INTEGER;
                                 }
+                                parameter_type->reg_ct =
+                                        this->genArithOp(op, temp_relation.type, temp_relation.reg_ct, temp_arithop.type, temp_arithop.reg_ct);
                         } else {
                                 error_printf( *itr, "Arithmetic Ops (+,-) are only defined for integers and floats \n");
                                 return false;

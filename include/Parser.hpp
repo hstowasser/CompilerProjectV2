@@ -75,6 +75,7 @@ private:
         unsigned int genTerm(token_type_e op, token_type_e type, unsigned int reg_a, unsigned int reg_b);
         unsigned int genRelation(token_type_e op, token_type_e type_a, unsigned int reg_a, token_type_e type_b, unsigned int reg_b);
         unsigned int genRelationStrings(token_type_e op, unsigned int reg_a, unsigned int reg_b);
+        unsigned int genArithOp(token_type_e op, token_type_e type_a, unsigned int reg_a, token_type_e type_b, unsigned int reg_b);
 
 public:
         Parser(Scope* scope);

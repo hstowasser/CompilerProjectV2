@@ -545,3 +545,57 @@ unsigned int Parser::genRelationStrings(token_type_e op, unsigned int reg_a, uns
 
         return d;
 }
+
+unsigned int Parser::genArithOp(token_type_e op, token_type_e type_a, unsigned int reg_a, token_type_e type_b, unsigned int reg_b)
+{
+        unsigned int d;
+        
+
+        if ( (type_a == T_RW_FLOAT) || (type_b == T_RW_FLOAT)) {
+                if ( type_a == T_RW_INTEGER){
+                        // convert to float
+                        // %6 = sitofp i32 %5 to float
+                        std::ostringstream ss0;
+                        ss0 << "  %" << this->scope->reg_ct_local << " = sitofp i32 %" << reg_a << " to float";
+                        reg_a = this->scope->reg_ct_local;
+                        this->scope->reg_ct_local++;
+                        this->scope->writeCode(ss0.str());
+                } else if (type_b == T_RW_INTEGER) {
+                        // convert to float
+                        std::ostringstream ss0;
+                        ss0 << "  %" << this->scope->reg_ct_local << " = sitofp i32 %" << reg_b << " to float";
+                        reg_b = this->scope->reg_ct_local;
+                        this->scope->reg_ct_local++;
+                        this->scope->writeCode(ss0.str());
+                }
+                // Do floating point OP
+                std::ostringstream ss;
+                d = this->scope->reg_ct_local;
+
+                if (op == T_OP_ARITH_MINUS ) {
+                        //%7 = fsub float %5, %6
+                        ss << "  %" << d << " = fsub float %" << reg_a << ", %" << reg_b;
+                } else { // T_OP_ARITH_PLUS
+                        // %7 = fadd float %5, %6
+                        ss << "  %" << d << " = fadd float %" << reg_a << ", %" << reg_b;
+                }
+                this->scope->reg_ct_local++;
+                this->scope->writeCode(ss.str());
+
+        } else {
+                // Do integer OP
+                std::ostringstream ss;
+                d = this->scope->reg_ct_local;
+
+                if (op == T_OP_ARITH_MINUS ) {
+                        //%7 = sub nsw i32 %5, %6
+                        ss << "  %" << d << " = sub nsw i32 %" << reg_a << ", %" << reg_b;
+                } else { // T_OP_ARITH_PLUS
+                        // %7 = add nsw i32 %5, %6
+                        ss << "  %" << d << " = add nsw i32 %" << reg_a << ", %" << reg_b;
+                }
+                this->scope->reg_ct_local++;
+                this->scope->writeCode(ss.str());
+        }
+        return d;
+}
