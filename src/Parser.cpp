@@ -1012,6 +1012,7 @@ bool Parser::parseRelation(std::list<token_t>::iterator *itr, type_holder_t* par
         type_holder_t temp_relation;
         type_holder_t temp_term;
         bool is_equal = false;
+        token_type_e op;
 
         ret = this->parseTerm(itr, &temp_term);
         if (!ret){
@@ -1029,35 +1030,48 @@ bool Parser::parseRelation(std::list<token_t>::iterator *itr, type_holder_t* par
                         ((*itr)->type == T_OP_REL_NOT_EQUAL)){
                         is_equal = true;
                 }
+                op = (*itr)->type;
 
                 // Then it's a relation?
                 this->next_token(itr); // Move to next token
                 ret = this->parseRelation(itr, &temp_relation);
 
-                if (type_holder_cmp(temp_relation, temp_term)){
+                if (temp_term.is_array){
+                        error_printf( *itr, "Relation operators are not allowed for arrays \n");
+                        return false;
+                } else if (type_holder_cmp(temp_relation, temp_term)){
                         // Both are the same
                         if ((temp_relation.type == T_RW_INTEGER) ||
                                 (temp_relation.type == T_RW_BOOL) ||
                                 (temp_relation.type == T_RW_FLOAT)) {
                                 // Good
+                                parameter_type->reg_ct = 
+                                        this->genRelation( op, temp_term.type, temp_term.reg_ct, temp_relation.type, temp_relation.reg_ct);
                                 parameter_type->type = T_RW_BOOL;
                         } else if (temp_relation.type == T_RW_STRING) {
                                 if (is_equal){
                                         parameter_type->type = T_RW_BOOL;
+                                        // TODO CODEGEN Implement memcmp in llvm
                                 } else {
                                         error_printf( *itr, "Strings only support == and != relation operators \n");
+                                        return false;
                                 }
                         } else {
                                 error_printf( *itr, "Relation operators are only defined for INT, BOOL and FLOATS \n");
+                                return false;
                         }                                
                 } else if ( ((temp_relation.type == T_RW_INTEGER) || (temp_relation.type == T_RW_BOOL)) &&
                         ((temp_term.type == T_RW_INTEGER) || (temp_term.type == T_RW_BOOL))) {
-                        // Combinations of int and bool are allowed
-                        parameter_type->type = T_RW_BOOL; // Default to bool
+                        // Combinations of int and bool are allowed. Default to bool
+                        // TODO CODEGEN convert the integer to a bool
+                        parameter_type->reg_ct = 
+                                        this->genRelation( op, temp_term.type, temp_term.reg_ct, temp_relation.type, temp_relation.reg_ct);
+                        parameter_type->type = T_RW_BOOL;
                 } else {
                         error_printf( *itr, "Types do not match \n"); // TODO print types
                         return false;
                 }
+
         }else{
                 *parameter_type = temp_term;
         }

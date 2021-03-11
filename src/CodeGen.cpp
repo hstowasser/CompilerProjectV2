@@ -412,3 +412,105 @@ unsigned int Parser::genTerm(token_type_e op, token_type_e type, unsigned int re
         this->scope->reg_ct_local++;
         return d;
 }
+
+unsigned int Parser::genRelation(token_type_e op, token_type_e type_a, unsigned int reg_a, token_type_e type_b, unsigned int reg_b)
+{
+        std::ostringstream ss;
+        
+
+        std::string op_str;
+
+        if (type_a == T_RW_BOOL || type_b == T_RW_BOOL){
+                std::ostringstream ss0;
+                std::ostringstream ss1;
+                std::ostringstream ss2;
+                std::ostringstream ss3;
+
+                if (type_a == T_RW_BOOL) {
+                        ss0 << "  %" << this->scope->reg_ct_local << " = trunc i8 %" << reg_a << " to i1";
+                } else {
+                        ss0 << "  %" << this->scope->reg_ct_local << " = trunc i32 %" << reg_a << " to i1";
+                }
+                reg_a = this->scope->reg_ct_local;
+                this->scope->reg_ct_local++;
+                ss1 << "  %" << this->scope->reg_ct_local << " = zext i1 %" << reg_a << "to i32";
+                reg_a = this->scope->reg_ct_local;
+                this->scope->reg_ct_local++;
+                this->scope->writeCode(ss0.str());
+                this->scope->writeCode(ss1.str());
+
+                if (type_b == T_RW_BOOL) {
+                        ss2 << "  %" << this->scope->reg_ct_local << " = trunc i8 %" << reg_b << " to i1";
+                } else {
+                        ss2 << "  %" << this->scope->reg_ct_local << " = trunc i32 %" << reg_b << " to i1";
+                }                
+                reg_b = this->scope->reg_ct_local;
+                this->scope->reg_ct_local++;
+                ss3 << "  %" << this->scope->reg_ct_local << " = zext i1 %" << reg_b << "to i32";
+                reg_b = this->scope->reg_ct_local;
+                this->scope->reg_ct_local++;
+                this->scope->writeCode(ss2.str());
+                this->scope->writeCode(ss3.str());
+        }
+
+        if ( type_a == T_RW_FLOAT){
+                switch (op){
+                case T_OP_REL_LESS:
+                        op_str = " = fcmp olt float %";
+                        break;
+                case T_OP_REL_GREATER_EQUAL:
+                        op_str = " = fcmp oge float %";
+                        break;
+                case T_OP_REL_LESS_EQUAL:
+                        op_str = " = fcmp ole float %";
+                        break;
+                case T_OP_REL_GREATER:
+                        op_str = " = fcmp ogt float %";
+                        break;
+                case T_OP_REL_EQUAL:
+                        op_str = " = fcmp oeq float %";
+                        break;
+                case T_OP_REL_NOT_EQUAL:
+                        op_str = " = fcmp une float %";
+                        break;
+                default:
+                        break;
+                }
+        } else { //if (type == T_RW_INTEGER || type == T_RW_INTEGER){
+                switch (op){
+                case T_OP_REL_LESS:
+                        op_str = " = icmp slt i32 %";
+                        break;
+                case T_OP_REL_GREATER_EQUAL:
+                        op_str = " = icmp sge i32 %";
+                        break;
+                case T_OP_REL_LESS_EQUAL:
+                        op_str = " = icmp sle i32 %";
+                        break;
+                case T_OP_REL_GREATER:
+                        op_str = " = icmp sgt i32 %";
+                        break;
+                case T_OP_REL_EQUAL:
+                        op_str = " = icmp eq i32 %";
+                        break;
+                case T_OP_REL_NOT_EQUAL:
+                        op_str = " = icmp ne i32 %";
+                        break;
+                default:
+                        break;
+                }
+        }
+
+        ss << "  %" << this->scope->reg_ct_local << op_str << reg_a << ", %" << reg_b;
+        this->scope->reg_ct_local++;
+        this->scope->writeCode(ss.str());
+
+        unsigned int d = this->scope->reg_ct_local;
+        std::ostringstream ss4;
+        ss4 << "  %" << this->scope->reg_ct_local << " = zext i1 %" << d-1 << " to i8"; //%8 = zext i1 %7 to i8
+        d = this->scope->reg_ct_local;
+        this->scope->reg_ct_local++;
+        this->scope->writeCode(ss4.str());
+        
+        return d;
+}
