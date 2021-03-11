@@ -200,11 +200,12 @@ bool Parser::parseDestination(std::list<token_t>::iterator *itr, type_holder_t* 
 {
         debug_print_call();
         bool ret = false;
+        bool global;
 
         // check identifier
         if ((*itr)->type == T_IDENTIFIER){
                 // Look up in symbol table and return type
-                ret = this->FindVariableType_Helper(itr, parameter_type);
+                ret = this->FindVariableType_Helper(itr, parameter_type, &global);
                 if( !ret){
                         return false;
                 }
@@ -241,7 +242,11 @@ bool Parser::parseDestination(std::list<token_t>::iterator *itr, type_holder_t* 
                         return false;
                 }
 
-                // TODO Add code generation for []
+                // CODEGEN GEP then update parameter_type->reg_ct
+                unsigned int index_reg = this->genIntToLong(expr_type.reg_ct);
+                parameter_type->reg_ct = this->genGEP(*parameter_type, index_reg, global);
+                parameter_type->is_array = false; // We are looking at only a single element
+                parameter_type->_is_global = false; // It has been imported
 
                 // check close bracket
                 if ((*itr)->type == T_SYM_RBRACKET){
@@ -1251,6 +1256,11 @@ bool Parser::parseName(std::list<token_t>::iterator *itr, type_holder_t* paramet
                         ret = false;
                         error_printf( *itr, "Expected closing bracket \n");
                 }
+                // CODEGEN GEP and load then update parameter_type->reg_ct
+                unsigned int index_reg = this->genIntToLong(expr_type.reg_ct);
+                unsigned int temp_reg = this->genGEP(*parameter_type, index_reg, global);
+                parameter_type->reg_ct = this->genLoadReg(parameter_type->type, temp_reg, false);
+
         } else {
                 // load variable
                 parameter_type->reg_ct = this->genLoadReg(parameter_type->type, parameter_type->reg_ct, global);

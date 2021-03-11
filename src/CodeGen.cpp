@@ -355,3 +355,36 @@ unsigned int Parser::genProcedureCall(symbol_t symbol, std::string name, std::li
         this->scope->reg_ct_local++;
         return d;
 }
+
+unsigned int Parser::genIntToLong(unsigned int reg)
+{
+        std::ostringstream ss;
+        unsigned int d = this->scope->reg_ct_local;
+
+        ss << "  %" << d << " = sext i32 %" << reg << " to i64";
+
+        this->scope->writeCode(ss.str());
+        this->scope->reg_ct_local++;
+        return d;
+}
+
+unsigned int Parser::genGEP(type_holder_t parameter_type, unsigned int index_reg, bool global /*= false*/)
+{
+        std::ostringstream ss;
+        unsigned int d = this->scope->reg_ct_local;
+
+        unsigned int len = parameter_type.array_length;
+        std::string type_str = get_llvm_type(parameter_type.type);
+
+        if (global){
+                ss << "  %" << d << " = getelementptr inbounds [" << len << " x " << type_str << "], [" 
+                        << len << " x " << type_str << "]* @" << parameter_type.reg_ct << ", i64 0, i64 %" << index_reg;
+        } else {
+                ss << "  %" << d << " = getelementptr inbounds [" << len << " x " << type_str << "], [" 
+                        << len << " x " << type_str << "]* %" << parameter_type.reg_ct << ", i64 0, i64 %" << index_reg;
+        }
+
+        this->scope->writeCode(ss.str());
+        this->scope->reg_ct_local++;
+        return d;
+}
