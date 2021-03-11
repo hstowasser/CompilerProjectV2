@@ -472,7 +472,9 @@ unsigned int Parser::genRelation(token_type_e op, token_type_e type_a, unsigned 
                 if (type_a == T_RW_BOOL) {
                         ss0 << "  %" << this->scope->reg_ct_local << " = trunc i8 %" << reg_a << " to i1";
                 } else {
-                        ss0 << "  %" << this->scope->reg_ct_local << " = trunc i32 %" << reg_a << " to i1";
+                        //%5 = icmp ne i32 %4, 0
+                        ss0 << "  %" << this->scope->reg_ct_local << " = icmp ne i32 %" << reg_a << ", 0"; // True if greater than zero
+                        //ss0 << "  %" << this->scope->reg_ct_local << " = trunc i32 %" << reg_a << " to i1";
                 }
                 reg_a = this->scope->reg_ct_local;
                 this->scope->reg_ct_local++;
@@ -485,7 +487,8 @@ unsigned int Parser::genRelation(token_type_e op, token_type_e type_a, unsigned 
                 if (type_b == T_RW_BOOL) {
                         ss2 << "  %" << this->scope->reg_ct_local << " = trunc i8 %" << reg_b << " to i1";
                 } else {
-                        ss2 << "  %" << this->scope->reg_ct_local << " = trunc i32 %" << reg_b << " to i1";
+                        ss2 << "  %" << this->scope->reg_ct_local << " = icmp ne i32 %" << reg_b << ", 0";
+                        //ss2 << "  %" << this->scope->reg_ct_local << " = trunc i32 %" << reg_b << " to i1";
                 }                
                 reg_b = this->scope->reg_ct_local;
                 this->scope->reg_ct_local++;
