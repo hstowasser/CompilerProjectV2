@@ -727,6 +727,8 @@ void Parser::genReturn(token_type_e type, unsigned int reg)
         
         ss << "  ret " << get_llvm_type(type) << " %" << reg;
 
+        this->scope->reg_ct_local++; // Another one of these strange invisible registers
+
         this->scope->writeCode(ss.str());
 }
 

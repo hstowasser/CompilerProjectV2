@@ -31,11 +31,17 @@ Scope::Scope()
     this->writeCode("@.str0 = private unnamed_addr constant [4 x i8] c\"%d\\0A\\00\", align 1", true);
     this->writeCode("@.str1 = private unnamed_addr constant [4 x i8] c\"%f\\0A\\00\", align 1", true);
     this->writeCode("@.str2 = private unnamed_addr constant [4 x i8] c\"%s\\0A\\00\", align 1", true);
+    this->writeCode("@.str3 = private unnamed_addr constant [3 x i8] c\"%d\\00\", align 1", true);
+    this->writeCode("@.str4 = private unnamed_addr constant [3 x i8] c\"%f\\00\", align 1", true);
+    this->writeCode("@.str5 = private unnamed_addr constant [9 x i8] c\"%[^\\0A]%*c\\00\", align 1", true);
+
+    this->writeCode("@buffer = common dso_local global [1024 x i8] zeroinitializer, align 16", true);
 
     this->writeCode("declare void @printf( i8*, ...)", true);
     this->writeCode("declare void @scanf( i8*, ...)", true);
     this->writeCode("declare i32 @strcmp(i8*, i8*)", true);
     this->writeCode("declare void @llvm.memcpy.p0i8.p0i8.i64(i8* noalias nocapture writeonly, i8* noalias nocapture readonly, i64, i1 immarg) #1", true);
+    this->writeCode("declare float @llvm.sqrt.f32(float %Val)", true);
 
     // putBool(bool Value): bool
     symbol_t putBool;
@@ -109,7 +115,12 @@ Scope::Scope()
     sqrt.parameter_type_arr = (type_holder_t*)calloc(sqrt.parameter_ct, sizeof(type_holder_t));
     sqrt.parameter_type_arr[0].type = T_RW_INTEGER;
     sqrt.variable_type.type = T_RW_FLOAT; //Return type
-    this->AddGlobalSymbol("SQRT",sqrt);
+    this->AddGlobalSymbol("SQRT",sqrt); // TODO Implement
+    this->writeCode("define float @SQRT0(i32 %0) {", true);
+    this->writeCode("	%2 = sitofp i32 %0 to float", true);
+    this->writeCode("	%3 = call float @llvm.sqrt.f32(float %2)", true);
+    this->writeCode("	ret float %3", true);
+    this->writeCode("}", true);
 
     // getBool(): bool Value
     symbol_t getBool;
@@ -118,6 +129,15 @@ Scope::Scope()
     getBool.type = ST_PROCEDURE;
     getBool.variable_type.type = T_RW_BOOL;
     this->AddGlobalSymbol(getBoolName,getBool);
+    this->writeCode("define i8 @GETBOOL0() {", true);
+    this->writeCode("	%1 = alloca i32, align 4", true);
+    this->writeCode("	%2 = getelementptr [3 x i8], [3 x i8]* @.str3, i64 0, i64 0", true);
+    this->writeCode("	call void (i8*, ...) @scanf( i8* %2, i32* %1)", true);
+    this->writeCode("	%3 = load i32, i32* %1, align 4", true);
+    this->writeCode("	%4 = icmp ne i32 %3, 0", true);
+    this->writeCode("	%5 = zext i1 %4 to i8", true);
+    this->writeCode("	ret i8 %5", true);
+    this->writeCode("}", true);
 
     // getInteger(): integer Value
     symbol_t getInteger;
@@ -126,6 +146,13 @@ Scope::Scope()
     getInteger.type = ST_PROCEDURE;
     getInteger.variable_type.type = T_RW_INTEGER;
     this->AddGlobalSymbol(getIntegerName,getInteger);
+    this->writeCode("define i32 @GETINTEGER0() {", true);
+    this->writeCode("	%1 = alloca i32, align 4", true);
+    this->writeCode("	%2 = getelementptr [3 x i8], [3 x i8]* @.str3, i64 0, i64 0", true);
+    this->writeCode("	call void (i8*, ...) @scanf( i8* %2, i32* %1)", true);
+    this->writeCode("	%3 = load i32, i32* %1, align 4", true);
+    this->writeCode("	ret i32 %3", true);
+    this->writeCode("}", true);
 
     // getFloat(): float Value
     symbol_t getFloat;
@@ -134,6 +161,13 @@ Scope::Scope()
     getFloat.type = ST_PROCEDURE;
     getFloat.variable_type.type = T_RW_FLOAT;
     this->AddGlobalSymbol(getFloatName,getFloat);
+    this->writeCode("define float @GETFLOAT0() {", true);
+    this->writeCode("	%1 = alloca float, align 4", true);
+    this->writeCode("	%2 = getelementptr [3 x i8], [3 x i8]* @.str4, i64 0, i64 0", true);
+    this->writeCode("	call void (i8*, ...) @scanf( i8* %2, float* %1)", true);
+    this->writeCode("	%3 = load float, float* %1, align 4", true);
+    this->writeCode("	ret float %3", true);
+    this->writeCode("}", true);
 
     // getString(): string Value
     symbol_t getString;
@@ -142,6 +176,11 @@ Scope::Scope()
     getString.type = ST_PROCEDURE;
     getString.variable_type.type = T_RW_STRING;
     this->AddGlobalSymbol(getStringName,getString);
+    this->writeCode("define i8* @GETSTRING0() {", true);
+    this->writeCode("	%1 = alloca i8*, align 8", true);
+    this->writeCode("	call void (i8*, ...) @scanf(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @.str5, i64 0, i64 0), i8* getelementptr inbounds ([1024 x i8], [1024 x i8]* @buffer, i64 0, i64 0))", true);
+    this->writeCode("	ret i8* getelementptr inbounds ([1024 x i8], [1024 x i8]* @buffer, i64 0, i64 0)", true);
+    this->writeCode("}", true);
     
 }
 
