@@ -75,6 +75,28 @@ unsigned int Parser::genAlloca(token_type_e type, bool is_arr /*= false*/, unsig
         }
         this->scope->writeCode(ss.str());
         this->scope->reg_ct_local++;
+
+        if (is_arr){
+                // TODO zero initialize arrays
+        } else {
+                switch (type)
+                {
+                case T_RW_INTEGER:
+                        this->genStoreConst(d, (int)0);
+                        break;
+                case T_RW_FLOAT:
+                        this->genStoreConst(d, (float)0);
+                        break;
+                case T_RW_BOOL:
+                        this->genStoreConst(d, (bool)0);
+                        break;
+                case T_RW_STRING:
+                        // TODO or Not needed?
+                        break;
+                default:
+                        break;
+                }
+        }
         return d;
 }
 

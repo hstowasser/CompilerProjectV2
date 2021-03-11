@@ -753,19 +753,33 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
                 this->scope->AddSymbol(name, symbol);
         }
 
+        genProcedureHeader(symbol, name);
+
+        scope->reg_ct_local += symbol.parameter_ct; // We need to set reg_ct_local before calling genVariableDeclaration. Sloppy
+
         auto it = this->paramSymbolBuffer.end();
+        unsigned int param_ct = 0;
         while(it != this->paramSymbolBuffer.begin()) {
                 auto tup = this->paramSymbolBuffer.back();
                 std::string name = std::get<0>(tup);
-                symbol_t symbol = std::get<1>(tup);
-                symbol.variable_type.reg_ct = scope->reg_ct_local++; // Set the reg_ct for it.
-                this->scope->AddSymbol(name, symbol);
+                symbol_t param_symbol = std::get<1>(tup);
+                symbol.variable_type.reg_ct = param_ct; // Set the reg_ct for it.
+
+                genVariableDeclaration( &param_symbol, false);
+                // Store parameter data in local memory
+                genStoreReg(param_symbol.variable_type.type, param_ct, param_symbol.variable_type.reg_ct, false);
+
+                this->scope->AddSymbol(name, param_symbol);
+
                 this->paramSymbolBuffer.pop_back();
                 it = this->paramSymbolBuffer.end();
+                param_ct++;
         }
                 
 
-        genProcedureHeader(symbol, name);
+        
+        // TODO Allocate local memory for parameters
+        // genVariableDeclaration( &symbol, global); // Generate code
 
         return ret;
 }
@@ -955,7 +969,6 @@ bool Parser::parseParameter(std::list<token_t>::iterator *itr, type_holder_t* pa
 
         // genVariableDeclaration( &symbol, global); // Generate code
 
-        symbol.variable_type.is_parameter = true;
 
         // if (global){
         //         this->scope->AddGlobalSymbol(name, symbol);
@@ -1437,8 +1450,6 @@ bool Parser::parseName(std::list<token_t>::iterator *itr, type_holder_t* paramet
                         // Or
                         // %7 = getelementptr inbounds [2 x i32], [2 x i32]* %2, i64 0, i64 0
                         // %8 = bitcast i32* %7 to i8*
-                } if (parameter_type->is_parameter) {
-                        // Do nothing
                 } else {
                         parameter_type->reg_ct = this->genLoadReg(parameter_type->type, parameter_type->reg_ct, global);
                 }
