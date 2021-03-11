@@ -1051,7 +1051,8 @@ bool Parser::parseRelation(std::list<token_t>::iterator *itr, type_holder_t* par
                         } else if (temp_relation.type == T_RW_STRING) {
                                 if (is_equal){
                                         parameter_type->type = T_RW_BOOL;
-                                        // TODO CODEGEN Implement memcmp in llvm
+                                        parameter_type->reg_ct = 
+                                                genRelationStrings(op, temp_term.reg_ct, temp_relation.reg_ct);
                                 } else {
                                         error_printf( *itr, "Strings only support == and != relation operators \n");
                                         return false;
@@ -1063,7 +1064,6 @@ bool Parser::parseRelation(std::list<token_t>::iterator *itr, type_holder_t* par
                 } else if ( ((temp_relation.type == T_RW_INTEGER) || (temp_relation.type == T_RW_BOOL)) &&
                         ((temp_term.type == T_RW_INTEGER) || (temp_term.type == T_RW_BOOL))) {
                         // Combinations of int and bool are allowed. Default to bool
-                        // TODO CODEGEN convert the integer to a bool
                         parameter_type->reg_ct = 
                                         this->genRelation( op, temp_term.type, temp_term.reg_ct, temp_relation.type, temp_relation.reg_ct);
                         parameter_type->type = T_RW_BOOL;

@@ -34,6 +34,7 @@ Scope::Scope()
 
     this->writeCode("declare void @printf( i8*, ...)", true);
     this->writeCode("declare void @scanf( i8*, ...)", true);
+    this->writeCode("declare i32 @strcmp(i8*, i8*)", true);
 
     // putBool(bool Value): bool
     symbol_t putBool;

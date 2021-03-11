@@ -476,7 +476,7 @@ unsigned int Parser::genRelation(token_type_e op, token_type_e type_a, unsigned 
                 default:
                         break;
                 }
-        } else { //if (type == T_RW_INTEGER || type == T_RW_INTEGER){
+        } else { //if (type_a == T_RW_INTEGER){
                 switch (op){
                 case T_OP_REL_LESS:
                         op_str = " = icmp slt i32 %";
@@ -512,5 +512,36 @@ unsigned int Parser::genRelation(token_type_e op, token_type_e type_a, unsigned 
         this->scope->reg_ct_local++;
         this->scope->writeCode(ss4.str());
         
+        return d;
+}
+
+unsigned int Parser::genRelationStrings(token_type_e op, unsigned int reg_a, unsigned int reg_b)
+{
+        std::ostringstream ss0;
+        std::ostringstream ss1;
+        std::ostringstream ss2;
+        unsigned int d = this->scope->reg_ct_local;
+
+        //%7 = call i32 @strcmp(i8* %5, i8* %6)
+        ss0 << "  %" << d << " = call i32 @strcmp(i8* %" << reg_a <<", i8* %" << reg_b << ")";
+        this->scope->reg_ct_local++;
+
+        if (op == T_OP_REL_EQUAL){
+                //%8 = icmp eq i32 %7, 0
+                ss1 << "  %" << this->scope->reg_ct_local << " = icmp eq i32 %" << d << ", 0";
+        } else { // T_OP_REL_NOT_EQUAL
+                ss1 << "  %" << this->scope->reg_ct_local << " = icmp ne i32 %" << d << ", 0";
+        }
+        d = this->scope->reg_ct_local;
+        this->scope->reg_ct_local++;
+
+        ss2 << "  %" << this->scope->reg_ct_local << " = zext i1 %" << d << " to i8"; //%8 = zext i1 %7 to i8
+        d = this->scope->reg_ct_local;
+        this->scope->reg_ct_local++;
+
+        this->scope->writeCode(ss0.str());
+        this->scope->writeCode(ss1.str());
+        this->scope->writeCode(ss2.str());
+
         return d;
 }
