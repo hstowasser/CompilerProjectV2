@@ -916,13 +916,14 @@ bool Parser::parseProgramHeader(std::list<token_t>::iterator *itr)
         are converted to true)"
 
 */
-bool Parser::parseExpression(std::list<token_t>::iterator *itr, type_holder_t* parameter_type /*= Null*/)
+bool Parser::parseExpression(std::list<token_t>::iterator *itr, type_holder_t* parameter_type)
 {
         debug_print_call();
         bool ret = false;
         type_holder_t temp_arithop;
         type_holder_t temp_expression;
         bool bitwise_op = false;
+        token_type_e op;
 
         // check for not
         if ((*itr)->type == T_RW_NOT){
@@ -945,16 +946,16 @@ bool Parser::parseExpression(std::list<token_t>::iterator *itr, type_holder_t* p
 
         if (((*itr)->type == T_OP_BITW_AND) ||
             ((*itr)->type == T_OP_BITW_OR)) {
-                // Then it's an Expression?
+                op = (*itr)->type;
+
                 this->next_token(itr); // Move to next token
                 ret = this->parseExpression(itr, &temp_expression);
 
                 // Bitwise operations are only valid for integers
                 if ((temp_expression.type == T_RW_INTEGER) &&
                    ((temp_arithop.type == T_RW_INTEGER))) {
-                        if ( parameter_type != NULL){
-                                *parameter_type = temp_arithop;
-                        }
+                        *parameter_type = temp_arithop;
+                        parameter_type->reg_ct = this->genExpression(op, temp_arithop.reg_ct, temp_expression.reg_ct);
                 } else {
                         error_printf( *itr, "Bitwise operations AND/OR are only defined for integers \n");
                         return false;

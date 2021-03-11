@@ -32,7 +32,7 @@ private:
         bool parseTypeMark(std::list<token_t>::iterator *itr, bool global = false, symbol_t* symbol = NULL);
 
         // All of these will need to return/check types
-        bool parseExpression(std::list<token_t>::iterator *itr, type_holder_t* parameter_type = NULL);
+        bool parseExpression(std::list<token_t>::iterator *itr, type_holder_t* parameter_type);
         bool parseRelation(std::list<token_t>::iterator *itr, type_holder_t* parameter_type);
         bool parseArithOp(std::list<token_t>::iterator *itr, type_holder_t* parameter_type);
         bool parseFactor(std::list<token_t>::iterator *itr, type_holder_t* parameter_type);
@@ -76,6 +76,7 @@ private:
         unsigned int genRelation(token_type_e op, token_type_e type_a, unsigned int reg_a, token_type_e type_b, unsigned int reg_b);
         unsigned int genRelationStrings(token_type_e op, unsigned int reg_a, unsigned int reg_b);
         unsigned int genArithOp(token_type_e op, token_type_e type_a, unsigned int reg_a, token_type_e type_b, unsigned int reg_b);
+        unsigned int genExpression(token_type_e op, unsigned int reg_a, unsigned int reg_b);
 
 public:
         Parser(Scope* scope);

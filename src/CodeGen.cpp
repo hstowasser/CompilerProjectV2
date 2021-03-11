@@ -599,3 +599,21 @@ unsigned int Parser::genArithOp(token_type_e op, token_type_e type_a, unsigned i
         }
         return d;
 }
+
+unsigned int Parser::genExpression(token_type_e op, unsigned int reg_a, unsigned int reg_b)
+{
+        std::ostringstream ss;
+        unsigned int d = this->scope->reg_ct_local;
+
+        if ( op == T_OP_BITW_AND) {
+                // %7 = and i32 %5, %6
+                ss << "  %" << d << " = and i32 %" << reg_a << ", %" << reg_b;
+        } else { // T_OP_BITW_OR
+                // %7 = or i32 %5, %6
+                ss << "  %" << d << " = or i32 %" << reg_a << ", %" << reg_b;
+        }
+
+        this->scope->reg_ct_local++;
+        this->scope->writeCode(ss.str());
+        return d;
+}
