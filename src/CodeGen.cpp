@@ -162,7 +162,7 @@ void Parser::genVariableDeclaration( symbol_t* symbol, bool global)
                                 break;
                         case T_RW_FLOAT:
                                 // @g = global float 0, align 4
-                                ss << "= global float 0, align 4";
+                                ss << "= global float 0.0, align 4";
                                 break;
                         case T_RW_BOOL:
                                 // @g = global i8 0
@@ -382,6 +382,30 @@ unsigned int Parser::genGEP(type_holder_t parameter_type, unsigned int index_reg
         } else {
                 ss << "  %" << d << " = getelementptr inbounds [" << len << " x " << type_str << "], [" 
                         << len << " x " << type_str << "]* %" << parameter_type.reg_ct << ", i64 0, i64 %" << index_reg;
+        }
+
+        this->scope->writeCode(ss.str());
+        this->scope->reg_ct_local++;
+        return d;
+}
+
+unsigned int Parser::genTerm(token_type_e op, token_type_e type, unsigned int reg_a, unsigned int reg_b)
+{
+        std::ostringstream ss;
+        unsigned int d = this->scope->reg_ct_local;
+
+        if ( op == T_OP_TERM_DIVIDE){
+                if ( type == T_RW_FLOAT){
+                        ss << "  %" << d << " = fdiv float %" << reg_a << ", %" << reg_b;
+                } else { // T_RW_INTEGER
+                        ss << "  %" << d << " = sdiv i32 %" << reg_a << ", %" << reg_b;
+                }
+        } else { //T_OP_TERM_MULTIPLY
+                if ( type == T_RW_FLOAT){
+                        ss << "  %" << d << " = fmul float %" << reg_a << ", %" << reg_b;
+                } else { // T_RW_INTEGER
+                        ss << "  %" << d << " = mul nsw i32 %" << reg_a << ", %" << reg_b;
+                }
         }
 
         this->scope->writeCode(ss.str());

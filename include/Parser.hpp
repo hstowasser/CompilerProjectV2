@@ -72,6 +72,7 @@ private:
 
         unsigned int genIntToLong(unsigned int reg);
         unsigned int genGEP(type_holder_t parameter_type, unsigned int index_reg, bool global = false);
+        unsigned int genTerm(token_type_e op, token_type_e type, unsigned int reg_a, unsigned int reg_b);
 
 public:
         Parser(Scope* scope);

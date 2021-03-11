@@ -1187,12 +1187,14 @@ bool Parser::parseTerm(std::list<token_t>::iterator *itr, type_holder_t* paramet
         bool ret = false;
         type_holder_t temp_factor;
         type_holder_t temp_term;
+        token_type_e op;
 
         ret = this->parseFactor(itr, &temp_factor);
         if (ret){
                 if (((*itr)->type == T_OP_TERM_DIVIDE) ||
                     ((*itr)->type == T_OP_TERM_MULTIPLY))
                 {
+                        op = (*itr)->type;
                         // Then it's a term?
                         this->next_token(itr); // Move to next token
                         ret = this->parseTerm(itr, &temp_term);
@@ -1206,6 +1208,7 @@ bool Parser::parseTerm(std::list<token_t>::iterator *itr, type_holder_t* paramet
                                 } else {
                                         error_printf( *itr, "Terms must both be either integers or floats \n");
                                 }
+                                parameter_type->reg_ct = genTerm( op, temp_factor.type, temp_factor.reg_ct, temp_term.reg_ct);
                         } else {
                                 error_printf( *itr, "Types do not match. Terms must both be either integers or floats \n");
                                 return false;
