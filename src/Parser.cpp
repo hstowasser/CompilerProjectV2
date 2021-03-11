@@ -1311,16 +1311,19 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr, type_holder_t* param
                 break;
         case T_OP_ARITH_MINUS:
                 this->next_token(itr); // Move to next token
-                genConstant(*itr, parameter_type, true);
                 if ((*itr)->type == T_CONST_INTEGER){
+                        genConstant(*itr, parameter_type, true);
                         parameter_type->type = T_RW_INTEGER;
                         this->next_token(itr); // Move to next token
                         ret = true;
                 } else if((*itr)->type == T_CONST_FLOAT){
+                        genConstant(*itr, parameter_type, true);
                         parameter_type->type = T_RW_FLOAT;
                         this->next_token(itr); // Move to next token
                         ret = true;
                 } else if (!ret){
+                        // TODO modify code generation for this case
+                        // multiply by -1 ?
                         ret = this->parseName(itr, parameter_type);
                 }
                 break;
