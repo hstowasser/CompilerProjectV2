@@ -24,6 +24,8 @@ typedef struct _type_holder_t{
 
         bool _is_global = false; //Only set when added to global symbol table
         unsigned int reg_ct = 0;
+
+        bool is_parameter = false; // Only true for parameter variables. Added so that we don't get a reduntant "load" in parseName
 } type_holder_t;
 
 typedef struct _symbol_t{

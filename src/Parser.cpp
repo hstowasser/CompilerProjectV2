@@ -532,6 +532,7 @@ bool Parser::parseReturnStatement(std::list<token_t>::iterator *itr)
                 return false;
         }
 
+        genReturn(procedure_type.type, expr_type.reg_ct);
 
         return ret;
 }
@@ -719,6 +720,19 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
                 this->scope->PushScope(name);
                 this->scope->AddSymbol(name, symbol);
         }
+
+        auto it = this->paramSymbolBuffer.end();
+        while(it != this->paramSymbolBuffer.begin()) {
+                auto tup = this->paramSymbolBuffer.back();
+                std::string name = std::get<0>(tup);
+                symbol_t symbol = std::get<1>(tup);
+                symbol.variable_type.reg_ct = scope->reg_ct_local++; // Set the reg_ct for it.
+                this->scope->AddSymbol(name, symbol);
+                this->paramSymbolBuffer.pop_back();
+                it = this->paramSymbolBuffer.end();
+        }
+                
+
         genProcedureHeader(symbol, name);
 
         return ret;
@@ -738,7 +752,7 @@ bool Parser::parseParameterList(std::list<token_t>::iterator *itr, bool global /
                         // Skip comma
                         this->next_token(itr); // Move to next token
                 }
-                ret = this->parseParameter(itr, global, &temp_parameter_type); // TODO Test type tracking
+                ret = this->parseParameter(itr, &temp_parameter_type); // Parameters of a global function are local
                 temp_param_list.push_back(temp_parameter_type);
                 symbol->parameter_ct++; // Increment parameterlist counter
                 first = false;
@@ -839,6 +853,89 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
                 this->scope->AddGlobalSymbol(name, symbol);
         }else{
                 this->scope->AddSymbol(name, symbol);
+        }
+
+        return ret;
+}
+
+bool Parser::parseParameter(std::list<token_t>::iterator *itr, type_holder_t* parameter_type)
+{
+        debug_print_call();
+        bool ret = false;
+        std::string name;
+        symbol_t symbol;
+
+        // check for "variable"
+        if ((*itr)->type == T_RW_VARIABLE){
+                this->next_token(itr); // Move to next token
+        }else{
+                return false; // Not a variable declaration
+        }
+
+        // check for identifier
+        if ((*itr)->type == T_IDENTIFIER){
+                symbol.type = ST_VARIABLE;
+                name = *(*itr)->getStringValue();
+
+                this->next_token(itr); // Move to next token
+        }else{
+                error_printf( *itr, "Expected identifier after \"VARIABLE\" \n");
+                return false;
+        }
+
+        // check for colon
+        if ((*itr)->type == T_SYM_COLON){
+                this->next_token(itr); // Move to next token
+        }else{
+                error_printf( *itr, "Expected colon in variable declaration \n");
+                return false;
+        }
+
+        // parse for type_mark
+        ret = this->parseTypeMark(itr, false, &symbol);
+        if (!ret){
+                return false;
+        }
+        
+
+        // check for open bracket
+        if ((*itr)->type == T_SYM_LBRACKET){
+                this->next_token(itr); // Move to next token
+
+                // parse bound
+                if ((*itr)->type == T_CONST_INTEGER){
+                        symbol.variable_type.is_array = true;
+                        symbol.variable_type.array_length = (unsigned int)(*itr)->getIntValue();
+                        this->next_token(itr); // Move to next token
+                }else{
+                        error_printf( *itr, "Expected bound inside of [] \n");
+                        return false;
+                }
+
+                // check for close bracket
+                if ((*itr)->type == T_SYM_RBRACKET){
+                        this->next_token(itr); // Move to next token
+                }else{
+                        error_printf( *itr, "Expected closing bracket \n");
+                        return false;
+                }
+        }
+
+        // genVariableDeclaration( &symbol, global); // Generate code
+
+        symbol.variable_type.is_parameter = true;
+
+        // if (global){
+        //         this->scope->AddGlobalSymbol(name, symbol);
+        // }else{
+        //         this->scope->AddSymbol(name, symbol);
+        // }
+        this->paramSymbolBuffer.push_back(std::make_tuple(name, symbol));
+
+        if ( parameter_type != NULL){
+                // If this was called by parseParameterList
+                // return type so it can be stored in the procedure symbol
+                *parameter_type = symbol.variable_type;
         }
 
         return ret;
@@ -1308,6 +1405,8 @@ bool Parser::parseName(std::list<token_t>::iterator *itr, type_holder_t* paramet
                         // Or
                         // %7 = getelementptr inbounds [2 x i32], [2 x i32]* %2, i64 0, i64 0
                         // %8 = bitcast i32* %7 to i8*
+                } if (parameter_type->is_parameter) {
+                        // Do nothing
                 } else {
                         parameter_type->reg_ct = this->genLoadReg(parameter_type->type, parameter_type->reg_ct, global);
                 }

@@ -275,9 +275,9 @@ void Scope::PrintScope()
                     // Print parameter types
                     for (unsigned int i=0; i<it->second.parameter_ct; i++)
                     {
-
-                        std::cout << token_type_to_string(it->second.parameter_type_arr[i].type);                        
                         std::cout << " ";
+                        std::cout << token_type_to_string(it->second.parameter_type_arr[i].type);                        
+                        
                     }
                 }
             }

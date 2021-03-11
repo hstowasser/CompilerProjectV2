@@ -24,7 +24,7 @@ private:
         bool parseProcedureBody(std::list<token_t>::iterator *itr);
 
         bool parseParameterList(std::list<token_t>::iterator *itr, bool global = false, symbol_t* symbol = NULL);
-        bool parseParameter(std::list<token_t>::iterator *itr, bool global, type_holder_t* parameter_type) {return this->parseVariableDeclaration(itr, global, parameter_type);}
+        bool parseParameter(std::list<token_t>::iterator *itr, type_holder_t* parameter_type);
 
         bool parseProcedureDeclaration(std::list<token_t>::iterator *itr, bool global);
         bool parseVariableDeclaration(std::list<token_t>::iterator *itr, bool global, type_holder_t* parameter_type = NULL);
@@ -69,6 +69,7 @@ private:
         unsigned int genProcedureCall(symbol_t symbol, std::string name, std::list<unsigned int> regs);
         void genArgumentsList();
         void genConstant(std::list<token_t>::iterator itr, type_holder_t* parameter_type, bool is_negative = false); // used in parseFactor
+        void genReturn(token_type_e type, unsigned int reg);
 
         unsigned int genIntToLong(unsigned int reg);
         unsigned int genIntToFloat(unsigned int reg);
@@ -82,6 +83,8 @@ private:
         unsigned int genRelationStrings(token_type_e op, unsigned int reg_a, unsigned int reg_b);
         unsigned int genArithOp(token_type_e op, token_type_e type_a, unsigned int reg_a, token_type_e type_b, unsigned int reg_b);
         unsigned int genExpression(token_type_e op, unsigned int reg_a, unsigned int reg_b);
+
+        std::list<std::tuple<std::string, symbol_t>> paramSymbolBuffer;
 
 public:
         Parser(Scope* scope);

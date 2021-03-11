@@ -217,7 +217,7 @@ void Parser::genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_
 
         std::string dtype_str = get_llvm_type(dest_type.type);
 
-        unsigned int d = this->scope->reg_ct_local;
+        //unsigned int d = this->scope->reg_ct_local;
 
         if (dest_type.is_array){
                 std::ostringstream ss;
@@ -248,7 +248,8 @@ void Parser::genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_
                 if (type_holder_cmp(dest_type, expr_type)){
                         // Both are the same
                         // store <type> %expression, <type>* %destination
-                        genStoreReg(dest_type.type, d-1, dest_type.reg_ct, dest_type._is_global);                      
+                        //genStoreReg(dest_type.type, d-1, dest_type.reg_ct, dest_type._is_global);
+                        genStoreReg(dest_type.type, expr_type.reg_ct, dest_type.reg_ct, dest_type._is_global);                     
                 } else if ( ((expr_type.type == T_RW_INTEGER) || (expr_type.type == T_RW_FLOAT)) &&
                         ((dest_type.type == T_RW_INTEGER) || (dest_type.type == T_RW_FLOAT))) {
                         // Combinations of int and float are allowed
@@ -288,8 +289,8 @@ void Parser::genProcedureHeader(symbol_t symbol, std::string name)
                 if (i != 0){
                         ss << ", ";
                 }
-                ss << get_llvm_type(symbol.parameter_type_arr[i].type) << " %" << this->scope->reg_ct_local;
-                this->scope->reg_ct_local++;
+                ss << get_llvm_type(symbol.parameter_type_arr[i].type) << " %" << symbol.parameter_type_arr[i].reg_ct;
+                
         }
         this->scope->reg_ct_local++; // Not sure why, but there is always an unused reg after parameter list
         
@@ -715,4 +716,13 @@ unsigned int Parser::genExpression(token_type_e op, unsigned int reg_a, unsigned
         this->scope->reg_ct_local++;
         this->scope->writeCode(ss.str());
         return d;
+}
+
+void Parser::genReturn(token_type_e type, unsigned int reg)
+{
+        std::ostringstream ss;
+        
+        ss << "  ret " << get_llvm_type(type) << " %" << reg;
+
+        this->scope->writeCode(ss.str());
 }
