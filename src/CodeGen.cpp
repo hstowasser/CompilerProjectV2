@@ -775,3 +775,68 @@ void Parser::genIfEnd(unsigned int end_label)
         this->scope->writeCode(ss0.str());
         this->scope->writeCode(ss1.str());
 }
+
+
+/*      
+
+        Loop assignment operations
+**HEAD
+*        branch start_label
+*Start_label:
+        Loop condition operations
+**Condition
+*        branch body_label or start_label
+*Body_label:
+        //content
+
+**End
+*        branch start_label
+*End_label;
+
+
+*/
+void Parser::genLoopHead(unsigned int start_label)
+{
+        std::ostringstream ss0;
+        std::ostringstream ss1;
+
+        ss0 << "  br label %L" << start_label;
+        ss1 << "L" << start_label << ":";
+
+        this->scope->writeCode(ss0.str());
+        this->scope->writeCode(ss1.str());
+}
+
+void Parser::genLoopCondition(unsigned int reg, unsigned int body_label, unsigned int end_label)
+{
+        std::ostringstream ss0;
+        std::ostringstream ss1;
+        std::ostringstream ss2;
+
+        unsigned int d = this->scope->reg_ct_local;
+
+        // %5 = trunc i8 %4 to i1
+        ss0 << "  %" << d << " = trunc i8 %" << reg << " to i1";
+        this->scope->reg_ct_local++;
+
+        // br i1 %5, label %6, label %10
+        ss1 << "  br i1 %" << d << ", label %L" << body_label << ", label %L" << end_label;
+
+        ss2 << "L" << body_label << ":";
+
+        this->scope->writeCode(ss0.str());
+        this->scope->writeCode(ss1.str());
+        this->scope->writeCode(ss2.str());
+}
+
+void Parser::genLoopEnd( unsigned int start_label, unsigned int end_label)
+{
+        std::ostringstream ss0;
+        std::ostringstream ss1;
+
+        ss0 << "  br label %L" << start_label;
+        ss1 << "L" << end_label << ":";
+
+        this->scope->writeCode(ss0.str());
+        this->scope->writeCode(ss1.str());
+}

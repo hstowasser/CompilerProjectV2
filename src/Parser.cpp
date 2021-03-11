@@ -369,7 +369,7 @@ bool Parser::parseIfStatement(std::list<token_t>::iterator *itr)
                 return false;
         }
 
-        // TODO generate code
+        // generate code
         if (expr_type.type == T_RW_INTEGER){
                 expr_type.reg_ct = this->genIntToBool(expr_type.reg_ct); // Convert to bool
         }
@@ -446,6 +446,9 @@ bool Parser::parseLoopStatement(std::list<token_t>::iterator *itr)
         debug_print_call();
         bool ret = false;
         type_holder_t expr_type;
+        unsigned int start_label;
+        unsigned int body_label;
+        unsigned int end_label;
 
         if ((*itr)->type == T_RW_FOR){
                 this->next_token(itr); // Move to next token
@@ -464,6 +467,11 @@ bool Parser::parseLoopStatement(std::list<token_t>::iterator *itr)
         if (!ret){
                 return false;
         }
+
+        start_label = this->scope->NewLabel();
+        body_label = this->scope->NewLabel();
+        end_label = this->scope->NewLabel();
+        this->genLoopHead( start_label);
 
         if ((*itr)->type == T_SYM_SEMICOLON){
                 this->next_token(itr); // Move to next token
@@ -484,6 +492,11 @@ bool Parser::parseLoopStatement(std::list<token_t>::iterator *itr)
                 return false;
         }
 
+        if (expr_type.type == T_RW_INTEGER){
+                expr_type.reg_ct = this->genIntToBool(expr_type.reg_ct); // Convert to bool
+        }
+        this->genLoopCondition( expr_type.reg_ct, body_label, end_label);
+
         if ((*itr)->type == T_SYM_RPAREN){
                 this->next_token(itr); // Move to next token
         }else{
@@ -501,6 +514,8 @@ bool Parser::parseLoopStatement(std::list<token_t>::iterator *itr)
                         return false;
                 }
         }
+
+        genLoopEnd( start_label, end_label);
 
 
         if ((*itr)->type == T_RW_END){

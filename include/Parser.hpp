@@ -88,6 +88,10 @@ private:
         void genIfElse(unsigned int else_label, unsigned int end_label);
         void genIfEnd(unsigned int end_label);
 
+        void genLoopHead(unsigned int start_label);
+        void genLoopCondition(unsigned int reg, unsigned int body_label, unsigned int end_label);
+        void genLoopEnd( unsigned int start_label, unsigned int end_label);
+
         std::list<std::tuple<std::string, symbol_t>> paramSymbolBuffer;
 
 public:
