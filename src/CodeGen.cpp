@@ -640,8 +640,8 @@ unsigned int Parser::genIntToBool(unsigned int reg)
         std::ostringstream ss0;
         std::ostringstream ss1;
 
-        // %5 = trunc i8 %4 to i1
-        ss0 << "  %" << this->scope->reg_ct_local << " = trunc i32 %" << reg << " to i1";
+        //%5 = icmp ne i32 %4, 0
+        ss0 << "  %" << this->scope->reg_ct_local << " = icmp ne i32 %" << reg << ", 0";
         unsigned int temp = this->scope->reg_ct_local;
         this->scope->reg_ct_local++;
         this->scope->writeCode(ss0.str());
