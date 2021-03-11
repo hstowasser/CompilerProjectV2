@@ -35,6 +35,7 @@ Scope::Scope()
     this->writeCode("declare void @printf( i8*, ...)", true);
     this->writeCode("declare void @scanf( i8*, ...)", true);
     this->writeCode("declare i32 @strcmp(i8*, i8*)", true);
+    this->writeCode("declare void @llvm.memcpy.p0i8.p0i8.i64(i8* noalias nocapture writeonly, i8* noalias nocapture readonly, i64, i1 immarg) #1", true);
 
     // putBool(bool Value): bool
     symbol_t putBool;

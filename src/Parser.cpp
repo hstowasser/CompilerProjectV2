@@ -255,6 +255,9 @@ bool Parser::parseDestination(std::list<token_t>::iterator *itr, type_holder_t* 
                         error_printf( *itr, "Expected closing bracket \n");
                         return false;
                 }
+        } else if (parameter_type->is_array){
+                // GEP
+                parameter_type->reg_ct = this->genGEP_Head(*parameter_type, global);
         }
         
 
@@ -1285,7 +1288,15 @@ bool Parser::parseName(std::list<token_t>::iterator *itr, type_holder_t* paramet
 
         } else {
                 // load variable
-                parameter_type->reg_ct = this->genLoadReg(parameter_type->type, parameter_type->reg_ct, global);
+                if (parameter_type->is_array){
+                        // TODO What do we do here? I think nothing
+                        parameter_type->reg_ct = this->genGEP_Head(*parameter_type, global);
+                        // Or
+                        // %7 = getelementptr inbounds [2 x i32], [2 x i32]* %2, i64 0, i64 0
+                        // %8 = bitcast i32* %7 to i8*
+                } else {
+                        parameter_type->reg_ct = this->genLoadReg(parameter_type->type, parameter_type->reg_ct, global);
+                }
         }
         return ret;
 }

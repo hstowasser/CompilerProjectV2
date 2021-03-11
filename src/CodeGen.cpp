@@ -69,7 +69,7 @@ unsigned int Parser::genAlloca(token_type_e type, bool is_arr /*= false*/, unsig
         unsigned int d = this->scope->reg_ct_local;
         if (is_arr){
                 // %d = alloca [len x i32], align tyes_size*len
-                ss << "  %" << d <<  " = alloca [" << len << " x " << type_str << align_str;
+                ss << "  %" << d <<  " = alloca [" << len << " x " << type_str << "]" << align_str;
         } else {                
                 ss << "  %" << d <<  " = alloca " << type_str << align_str;
         }
@@ -214,15 +214,37 @@ void Parser::genVariableDeclaration( symbol_t* symbol, bool global)
 
 void Parser::genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_type)
 {
-        std::ostringstream ss0;
-        std::ostringstream ss1;
 
         std::string dtype_str = get_llvm_type(dest_type.type);
 
         unsigned int d = this->scope->reg_ct_local;
 
         if (dest_type.is_array){
+                std::ostringstream ss;
+                std::ostringstream ss0;
+                std::ostringstream ss1;
+                unsigned int reg_a = dest_type.reg_ct;
+                unsigned int reg_b = expr_type.reg_ct;
+                unsigned int size = get_llvm_align(dest_type.type);
+                unsigned int len = dest_type.array_length * size;
+
+                // bitcast both to *8
+                //%8 = bitcast i32* %7 to i8*
+                ss0 << "  %" << this->scope->reg_ct_local <<" = bitcast " << dtype_str << "* %" << reg_a << " to i8*";
+                reg_a = this->scope->reg_ct_local;
+                this->scope->reg_ct_local++;
+
+                ss1 << "  %" << this->scope->reg_ct_local <<" = bitcast " << dtype_str << "* %" << reg_b << " to i8*";
+                reg_b = this->scope->reg_ct_local;
+                this->scope->reg_ct_local++;
+
                 // TODO Implement memcpy
+                ss << "  call void @llvm.memcpy.p0i8.p0i8.i64(i8* align " << size << " %" << reg_a << ", i8* align " 
+                        << size << " %" << reg_b << ", i64 " << len << ", i1 false)";
+                
+                this->scope->writeCode(ss0.str());
+                this->scope->writeCode(ss1.str());
+                this->scope->writeCode(ss.str());
         } else {
                 if (type_holder_cmp(dest_type, expr_type)){
                         // Both are the same
@@ -382,6 +404,27 @@ unsigned int Parser::genGEP(type_holder_t parameter_type, unsigned int index_reg
         } else {
                 ss << "  %" << d << " = getelementptr inbounds [" << len << " x " << type_str << "], [" 
                         << len << " x " << type_str << "]* %" << parameter_type.reg_ct << ", i64 0, i64 %" << index_reg;
+        }
+
+        this->scope->writeCode(ss.str());
+        this->scope->reg_ct_local++;
+        return d;
+}
+
+unsigned int Parser::genGEP_Head(type_holder_t parameter_type,  bool global /*= false*/)
+{
+        std::ostringstream ss;
+        unsigned int d = this->scope->reg_ct_local;
+
+        unsigned int len = parameter_type.array_length;
+        std::string type_str = get_llvm_type(parameter_type.type);
+
+        if (global){
+                ss << "  %" << d << " = getelementptr inbounds [" << len << " x " << type_str << "], [" 
+                        << len << " x " << type_str << "]* @" << parameter_type.reg_ct << ", i64 0, i64 0";
+        } else {
+                ss << "  %" << d << " = getelementptr inbounds [" << len << " x " << type_str << "], [" 
+                        << len << " x " << type_str << "]* %" << parameter_type.reg_ct << ", i64 0, i64 0";
         }
 
         this->scope->writeCode(ss.str());
