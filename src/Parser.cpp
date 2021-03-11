@@ -298,16 +298,30 @@ bool Parser::parseAssignmentStatement(std::list<token_t>::iterator *itr)
                 ((dest_type.type == T_RW_INTEGER) || (dest_type.type == T_RW_FLOAT))) {
                 // Combinations of int and float are allowed
                 // Typecase to destination
+                if ( dest_type.type == T_RW_INTEGER){
+                        expr_type.reg_ct = this->genFloatToInt(expr_type.reg_ct);
+                        expr_type.type = T_RW_INTEGER;
+                } else {
+                        expr_type.reg_ct = this->genIntToFloat(expr_type.reg_ct);
+                        expr_type.type = T_RW_FLOAT;
+                }
         } else if ( ((expr_type.type == T_RW_INTEGER) || (expr_type.type == T_RW_BOOL)) &&
                 ((dest_type.type == T_RW_INTEGER) || (dest_type.type == T_RW_BOOL))) {
                 // Combinations of int and bool are allowed
                 // Typecast to destination
+                if ( dest_type.type == T_RW_INTEGER){
+                        expr_type.reg_ct = this->genBoolToInt(expr_type.reg_ct);
+                        expr_type.type = T_RW_INTEGER;
+                } else {
+                        expr_type.reg_ct = this->genIntToBool(expr_type.reg_ct);
+                        expr_type.type = T_RW_BOOL;
+                }
         } else {
                 error_printf( *itr, "Destination type does not match expression \n"); // TODO print types
                 return false;
         }
 
-        // TODO Codegeneration
+        // Codegeneration
         // if int | float | bool
                 // store <destination_type> <expression>, <destination_type>* <destination_ptr>
                 // store <i32/float/bool> %current, <i32/float/bool>* symbol_table_lookup_%reg

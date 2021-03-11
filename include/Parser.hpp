@@ -71,6 +71,10 @@ private:
         void genConstant(std::list<token_t>::iterator itr, type_holder_t* parameter_type, bool is_negative = false); // used in parseFactor
 
         unsigned int genIntToLong(unsigned int reg);
+        unsigned int genIntToFloat(unsigned int reg);
+        unsigned int genFloatToInt(unsigned int reg);
+        unsigned int genBoolToInt(unsigned int reg);
+        unsigned int genIntToBool(unsigned int reg);
         unsigned int genGEP(type_holder_t parameter_type, unsigned int index_reg, bool global = false);
         unsigned int genGEP_Head(type_holder_t parameter_type,  bool global /*= false*/);
         unsigned int genTerm(token_type_e op, token_type_e type, unsigned int reg_a, unsigned int reg_b);

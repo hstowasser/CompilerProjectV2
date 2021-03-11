@@ -238,7 +238,6 @@ void Parser::genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_
                 reg_b = this->scope->reg_ct_local;
                 this->scope->reg_ct_local++;
 
-                // TODO Implement memcpy
                 ss << "  call void @llvm.memcpy.p0i8.p0i8.i64(i8* align " << size << " %" << reg_a << ", i8* align " 
                         << size << " %" << reg_b << ", i64 " << len << ", i1 false)";
                 
@@ -589,6 +588,72 @@ unsigned int Parser::genRelationStrings(token_type_e op, unsigned int reg_a, uns
         return d;
 }
 
+unsigned int Parser::genIntToFloat(unsigned int reg)
+{
+        // convert to float
+        // %6 = sitofp i32 %5 to float
+        std::ostringstream ss0;
+        unsigned int d = this->scope->reg_ct_local;
+        ss0 << "  %" << d << " = sitofp i32 %" << reg << " to float";
+        this->scope->reg_ct_local++;
+        this->scope->writeCode(ss0.str());
+        return d;
+}
+
+unsigned int Parser::genFloatToInt(unsigned int reg)
+{
+        // convert to int
+        // %5 = fptosi float %4 to i32
+        std::ostringstream ss0;
+        unsigned int d = this->scope->reg_ct_local;
+        ss0 << "  %" << d << " = fptosi float %" << reg << " to i32";
+        this->scope->reg_ct_local++;
+        this->scope->writeCode(ss0.str());
+        return d;
+}
+
+unsigned int Parser::genBoolToInt(unsigned int reg)
+{
+        // Extend to int
+        std::ostringstream ss0;
+        std::ostringstream ss1;
+
+        // %5 = trunc i8 %4 to i1
+        ss0 << "  %" << this->scope->reg_ct_local << " = trunc i8 %" << reg << " to i1";
+        unsigned int temp = this->scope->reg_ct_local;
+        this->scope->reg_ct_local++;
+        this->scope->writeCode(ss0.str());
+
+        // %6 = zext i1 %5 to i32
+        unsigned int d = this->scope->reg_ct_local;
+        ss1 << "  %" << d << " = zext i1 %" << temp << " to i32";
+        this->scope->reg_ct_local++;
+        this->scope->writeCode(ss1.str());
+
+        return d;
+}
+
+unsigned int Parser::genIntToBool(unsigned int reg)
+{
+        // truncate to bool
+        std::ostringstream ss0;
+        std::ostringstream ss1;
+
+        // %5 = trunc i8 %4 to i1
+        ss0 << "  %" << this->scope->reg_ct_local << " = trunc i32 %" << reg << " to i1";
+        unsigned int temp = this->scope->reg_ct_local;
+        this->scope->reg_ct_local++;
+        this->scope->writeCode(ss0.str());
+
+        // %6 = zext i1 %5 to i8
+        unsigned int d = this->scope->reg_ct_local;
+        ss1 << "  %" << d << " = zext i1 %" << temp << " to i8";
+        this->scope->reg_ct_local++;
+        this->scope->writeCode(ss1.str());
+
+        return d;
+}
+
 unsigned int Parser::genArithOp(token_type_e op, token_type_e type_a, unsigned int reg_a, token_type_e type_b, unsigned int reg_b)
 {
         unsigned int d;
@@ -597,19 +662,10 @@ unsigned int Parser::genArithOp(token_type_e op, token_type_e type_a, unsigned i
         if ( (type_a == T_RW_FLOAT) || (type_b == T_RW_FLOAT)) {
                 if ( type_a == T_RW_INTEGER){
                         // convert to float
-                        // %6 = sitofp i32 %5 to float
-                        std::ostringstream ss0;
-                        ss0 << "  %" << this->scope->reg_ct_local << " = sitofp i32 %" << reg_a << " to float";
-                        reg_a = this->scope->reg_ct_local;
-                        this->scope->reg_ct_local++;
-                        this->scope->writeCode(ss0.str());
+                        reg_a = genIntToFloat(reg_a);
                 } else if (type_b == T_RW_INTEGER) {
                         // convert to float
-                        std::ostringstream ss0;
-                        ss0 << "  %" << this->scope->reg_ct_local << " = sitofp i32 %" << reg_b << " to float";
-                        reg_b = this->scope->reg_ct_local;
-                        this->scope->reg_ct_local++;
-                        this->scope->writeCode(ss0.str());
+                        reg_b = genIntToFloat(reg_b);
                 }
                 // Do floating point OP
                 std::ostringstream ss;
