@@ -757,6 +757,7 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
 
         scope->reg_ct_local += symbol.parameter_ct; // We need to set reg_ct_local before calling genVariableDeclaration. Sloppy
 
+        // Allocate local memory for parameters
         auto it = this->paramSymbolBuffer.end();
         unsigned int param_ct = 0;
         while(it != this->paramSymbolBuffer.begin()) {
@@ -775,11 +776,6 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
                 it = this->paramSymbolBuffer.end();
                 param_ct++;
         }
-                
-
-        
-        // TODO Allocate local memory for parameters
-        // genVariableDeclaration( &symbol, global); // Generate code
 
         return ret;
 }
@@ -1368,33 +1364,36 @@ bool Parser::parseTerm(std::list<token_t>::iterator *itr, type_holder_t* paramet
         token_type_e op;
 
         ret = this->parseFactor(itr, &temp_factor);
-        if (ret){
-                if (((*itr)->type == T_OP_TERM_DIVIDE) ||
-                    ((*itr)->type == T_OP_TERM_MULTIPLY))
-                {
-                        op = (*itr)->type;
-                        // Then it's a term?
-                        this->next_token(itr); // Move to next token
-                        ret = this->parseTerm(itr, &temp_term);
-
-                        if (type_holder_cmp(temp_factor, temp_term)){
-                                if (temp_factor.type == T_RW_INTEGER) {
-                                        // Combinations of int and float are allowed
-                                        parameter_type->type = T_RW_INTEGER;
-                                } else if (temp_factor.type == T_RW_FLOAT){
-                                        parameter_type->type = T_RW_FLOAT;
-                                } else {
-                                        error_printf( *itr, "Terms must both be either integers or floats \n");
-                                }
-                                parameter_type->reg_ct = genTerm( op, temp_factor.type, temp_factor.reg_ct, temp_term.reg_ct);
-                        } else {
-                                error_printf( *itr, "Types do not match. Terms must both be either integers or floats \n");
-                                return false;
-                        }
-                }else{
-                        *parameter_type = temp_factor;
-                }
+        if (!ret){
+                return false;
         }
+
+        if (((*itr)->type == T_OP_TERM_DIVIDE) ||
+                ((*itr)->type == T_OP_TERM_MULTIPLY))
+        {
+                op = (*itr)->type;
+                // Then it's a term?
+                this->next_token(itr); // Move to next token
+                ret = this->parseTerm(itr, &temp_term);
+
+                if (type_holder_cmp(temp_factor, temp_term)){
+                        if (temp_factor.type == T_RW_INTEGER) {
+                                // Combinations of int and float are allowed
+                                parameter_type->type = T_RW_INTEGER;
+                        } else if (temp_factor.type == T_RW_FLOAT){
+                                parameter_type->type = T_RW_FLOAT;
+                        } else {
+                                error_printf( *itr, "Terms must both be either integers or floats \n");
+                        }
+                        parameter_type->reg_ct = genTerm( op, temp_factor.type, temp_factor.reg_ct, temp_term.reg_ct);
+                } else {
+                        error_printf( *itr, "Types do not match. Terms must both be either integers or floats \n");
+                        return false;
+                }
+        }else{
+                *parameter_type = temp_factor;
+        }
+        
 
         return ret;
 }
