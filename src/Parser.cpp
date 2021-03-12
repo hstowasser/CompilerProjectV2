@@ -4,13 +4,13 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#if 0
+#if 1
 #define debug_print_call() printf("%s\n", __FUNCTION__)
 #else
 #define debug_print_call()
 #endif
 
-#if 0
+#if 1
 #define debug_print_token(itr) print_token(itr)
 #else
 #define debug_print_token(itr)
@@ -254,7 +254,8 @@ bool Parser::parseDestination(std::list<token_t>::iterator *itr, type_holder_t* 
                 }
         } else if (parameter_type->is_array){
                 // GEP
-                parameter_type->reg_ct = this->genGEP_Head(*parameter_type, global);
+                //parameter_type->reg_ct = this->genGEP_Head(*parameter_type, global);
+                //parameter_type->_is_global = false; // It has been imported
         }
         
 
@@ -291,6 +292,9 @@ bool Parser::parseAssignmentStatement(std::list<token_t>::iterator *itr)
         if (type_holder_cmp(dest_type, expr_type)){
                 // Both are the same
                 
+        } else if (dest_type.is_array != expr_type.is_array){
+                error_printf( *itr, "Assignment between array and non-array types is not allowed \n");
+                return false;
         } else if ( ((expr_type.type == T_RW_INTEGER) || (expr_type.type == T_RW_FLOAT)) &&
                 ((dest_type.type == T_RW_INTEGER) || (dest_type.type == T_RW_FLOAT))) {
                 // Combinations of int and float are allowed
@@ -723,7 +727,13 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
         if ((*itr)->type == T_SYM_LPAREN){
                 this->next_token(itr); // Move to next token
 
-                ret = this->parseParameterList(itr, global, &symbol);
+                if ((*itr)->type == T_SYM_RPAREN) {
+                        symbol.parameter_ct = 0; // No parameters
+                } else {
+                        ret = this->parseParameterList(itr, global, &symbol);
+                }
+
+                
 
                 if ((*itr)->type == T_SYM_RPAREN){
                         this->next_token(itr); // Move to next token
@@ -1091,6 +1101,7 @@ bool Parser::parseExpression(std::list<token_t>::iterator *itr, type_holder_t* p
         if (bitwise_op){
                 if (temp_arithop.type == T_RW_INTEGER) {
                         // Good
+                        // TODO Implement bitwise not codegen
                 } else {
                         error_printf( *itr, "Bitwise operation NOT is only defined for integers \n");
                         return false;
@@ -1108,7 +1119,13 @@ bool Parser::parseExpression(std::list<token_t>::iterator *itr, type_holder_t* p
                 if ((temp_expression.type == T_RW_INTEGER) &&
                    ((temp_arithop.type == T_RW_INTEGER))) {
                         *parameter_type = temp_arithop;
-                        parameter_type->reg_ct = this->genExpression(op, temp_arithop.reg_ct, temp_expression.reg_ct);
+                        if (temp_arithop.is_array == false && temp_expression.is_array == false){
+                                parameter_type->reg_ct = this->genExpression(op, temp_arithop.reg_ct, temp_expression.reg_ct);
+                        }else{
+                                array_op_params params = genSetupArrayOp(&temp_arithop, &temp_expression, T_RW_INTEGER);
+                                unsigned int temp_reg_ct = this->genExpression(op, temp_arithop.reg_ct, temp_expression.reg_ct);
+                                *parameter_type = genEndArrayOp( params, temp_reg_ct);
+                        }
                 } else {
                         error_printf( *itr, "Bitwise operations AND/OR are only defined for integers \n");
                         return false;
@@ -1141,7 +1158,10 @@ bool Parser::parseArithOp(std::list<token_t>::iterator *itr, type_holder_t* para
                         this->next_token(itr); // Move to next token
                         ret = this->parseArithOp(itr, &temp_arithop);
 
-                        if ( ((temp_relation.type == T_RW_INTEGER) || (temp_relation.type == T_RW_FLOAT)) &&
+                        if (temp_relation.is_array != temp_arithop.is_array){
+                                error_printf( *itr, "Arithmetic between array and non-array types are not allowed... yet\n");
+                                return false;
+                        } else if ( ((temp_relation.type == T_RW_INTEGER) || (temp_relation.type == T_RW_FLOAT)) &&
                              ((temp_arithop.type == T_RW_INTEGER) || (temp_arithop.type == T_RW_FLOAT))) {
                                 // Combinations of int and float are allowed
                                 if (temp_relation.type == T_RW_FLOAT || temp_arithop.type == T_RW_FLOAT){
@@ -1219,7 +1239,10 @@ bool Parser::parseRelation(std::list<token_t>::iterator *itr, type_holder_t* par
                                 error_printf( *itr, "Relation operators are only defined for INT, BOOL and FLOATS \n");
                                 return false;
                         }                                
-                } else if ( ((temp_relation.type == T_RW_INTEGER) || (temp_relation.type == T_RW_BOOL)) &&
+                } else if (temp_relation.is_array != temp_term.is_array){
+                        error_printf( *itr, "Comparisons between array and non-array types are not allowed... yet \n");
+                        return false;
+                }else if ( ((temp_relation.type == T_RW_INTEGER) || (temp_relation.type == T_RW_BOOL)) &&
                         ((temp_term.type == T_RW_INTEGER) || (temp_term.type == T_RW_BOOL))) {
                         // Combinations of int and bool are allowed. Default to bool
                         parameter_type->reg_ct = 
@@ -1405,6 +1428,7 @@ bool Parser::parseName(std::list<token_t>::iterator *itr, type_holder_t* paramet
         if ((*itr)->type == T_IDENTIFIER){
                 // Lookup in symbol table.
                 // Set parameter_type
+                // TODO consider replacing global with parameter_type->_is_global
                 ret = FindVariableType_Helper(itr, parameter_type, &global); // returns false if not found
                 if (!ret){
                         return false;
@@ -1444,7 +1468,7 @@ bool Parser::parseName(std::list<token_t>::iterator *itr, type_holder_t* paramet
                 // load variable
                 if (parameter_type->is_array){
                         // TODO What do we do here? I think nothing
-                        parameter_type->reg_ct = this->genGEP_Head(*parameter_type, global);
+                        // parameter_type->reg_ct = this->genGEP_Head(*parameter_type, global);
                         // Or
                         // %7 = getelementptr inbounds [2 x i32], [2 x i32]* %2, i64 0, i64 0
                         // %8 = bitcast i32* %7 to i8*
@@ -1554,15 +1578,11 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr, type_holder_t* param
         return ret;
 }
 
-void Parser::parse(std::list<token_t> token_list)
+bool Parser::parse(std::list<token_t> token_list)
 {
         std::list<token_t>::iterator itr;
         this->itr_end = token_list.end();
         itr = token_list.begin();
         bool ret = this->parseProgram(&itr);
-        if (ret){
-                printf("Pass\n");
-        }else{
-                printf("Fail\n");
-        }
+        return ret;
 }

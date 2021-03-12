@@ -18,20 +18,45 @@ std::string get_llvm_type(token_type_e type)
         }
 }
 
-unsigned int get_llvm_align(token_type_e type)
+unsigned int get_llvm_size(token_type_e type)
 {
+        unsigned int ret;
         switch (type){
         case T_RW_INTEGER:
-                return 4;
+                ret = 4;
+                break;
         case T_RW_FLOAT:
-                return 4;
+                ret = 4;
+                break;
         case T_RW_BOOL:
-                return 1;
+                ret = 1;
+                break;
         case T_RW_STRING:
-                return 8;
+                ret = 8;
+                break;
         default:
                 return 0;
         }
+        return ret;
+}
+
+unsigned int get_llvm_align(token_type_e type, bool is_arr, unsigned int len)
+{
+        unsigned int ret = get_llvm_size(type);
+
+        if (is_arr){
+                ret = ret * len;
+                if (ret <=0 ){
+                        ret = 1;
+                } else if (ret < 4) {
+                        ret = 4;
+                } else if (ret < 8) {
+                        ret = 8;
+                } else if (ret > 8) {
+                        ret = 16;
+                }
+        }
+        return ret;
 }
 
 std::string getHex(float x)
@@ -55,9 +80,8 @@ unsigned int Parser::genAlloca(token_type_e type, bool is_arr /*= false*/, unsig
         std::ostringstream ss;
         std::string align_str;
         std::string type_str = get_llvm_type(type);
-        unsigned int size = get_llvm_align(type);
+        unsigned int align_int = get_llvm_align(type, is_arr, len);
 
-        unsigned int align_int = is_arr ? size*len : size;
         if (align_int > 1){
                 std::ostringstream tempss;
                 tempss << ", align " << align_int;
@@ -199,28 +223,11 @@ void Parser::genVariableDeclaration( symbol_t* symbol, bool global)
                         }
                 } else {
                         unsigned int len = symbol->variable_type.array_length;
+                        std::string type_str = get_llvm_type(symbol->variable_type.type);
+                        unsigned int align_int = get_llvm_align(symbol->variable_type.type, symbol->variable_type.is_array, len);
                         ss << "@" << this->scope->reg_ct_global << " = global [" 
                         << len << " x "; // @g = global [len x 
-                        switch (symbol->variable_type.type){
-                        case T_RW_INTEGER:
-                                // @g = global [len x i32] zeroinitializer, align 4*len
-                                ss << "i32] zeroinitializer, align " << 4*len;
-                                break;
-                        case T_RW_FLOAT:
-                                // @g = global [len X float] zeroinitializer, align 4*len
-                                ss << "float] zeroinitializer, align " << 4*len;
-                                break;
-                        case T_RW_BOOL:
-                                // @g = global [len x i8] zeroinitializer
-                                ss << "i8] zeroinitializer";
-                                break;
-                        case T_RW_STRING:
-                                // @g = global [len x i8*] zeroinitializer, align 8*len
-                                ss << "i8*] zeroinitializer, align " << 8*len;
-                                break;
-                        default:
-                                break;
-                        }
+                        ss << type_str << "] zeroinitializer, align " << align_int;
                 }
                 symbol->variable_type.reg_ct = this->scope->reg_ct_global;
                 this->scope->reg_ct_global++;
@@ -245,10 +252,12 @@ void Parser::genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_
                 std::ostringstream ss;
                 std::ostringstream ss0;
                 std::ostringstream ss1;
-                unsigned int reg_a = dest_type.reg_ct;
-                unsigned int reg_b = expr_type.reg_ct;
-                unsigned int size = get_llvm_align(dest_type.type);
+                unsigned int size = get_llvm_size(dest_type.type);
                 unsigned int len = dest_type.array_length * size;
+
+                // GEP in parseName was removed so will need to add a GEP here.
+                unsigned int reg_a = this->genGEP_Head(dest_type, dest_type._is_global);
+                unsigned int reg_b = this->genGEP_Head(expr_type, expr_type._is_global);
 
                 // bitcast both to *8
                 //%8 = bitcast i32* %7 to i8*
@@ -833,7 +842,7 @@ void Parser::genLoopHead(unsigned int start_label)
         this->scope->writeCode(ss1.str());
 }
 
-void Parser::genLoopCondition(unsigned int reg, unsigned int body_label, unsigned int end_label)
+void Parser::genLoopCondition(unsigned int reg, unsigned int body_label, unsigned int end_label, bool dont_tuncate /*= false*/)
 {
         std::ostringstream ss0;
         std::ostringstream ss1;
@@ -841,9 +850,13 @@ void Parser::genLoopCondition(unsigned int reg, unsigned int body_label, unsigne
 
         unsigned int d = this->scope->reg_ct_local;
 
-        // %5 = trunc i8 %4 to i1
-        ss0 << "  %" << d << " = trunc i8 %" << reg << " to i1";
-        this->scope->reg_ct_local++;
+        if (dont_tuncate) {
+                d = reg; // Evaluate reg directly. Used in Array Operation Loop generation
+        } else {
+                // %5 = trunc i8 %4 to i1
+                ss0 << "  %" << d << " = trunc i8 %" << reg << " to i1";
+                this->scope->reg_ct_local++;
+        }
 
         // br i1 %5, label %6, label %10
         ss1 << "  br i1 %" << d << ", label %L" << body_label << ", label %L" << end_label;
@@ -884,4 +897,112 @@ unsigned int Parser::genNegate(token_type_e type, unsigned int reg)
         this->scope->writeCode(ss.str());
         this->scope->reg_ct_local++;
         return d;
+}
+
+array_op_params Parser::genSetupArrayOp(type_holder_t* type_a, type_holder_t* type_b, token_type_e result_type)
+{
+        array_op_params ret;
+
+        unsigned int start_label = this->scope->NewLabel();
+        unsigned int body_label = this->scope->NewLabel();
+        // unsigned int inc_label = this->scope->NewLabel();
+        unsigned int end_label = this->scope->NewLabel();
+
+        unsigned int len = type_a->is_array ? type_a->array_length : type_b->array_length;
+        //unsigned int size = get_llvm_size(result_type);
+
+        // Allocate i
+        std::ostringstream ss_i;
+        ret.reg_i = this->scope->reg_ct_local++; // Store location of i
+        ss_i << "  %"  << ret.reg_i << " = alloca i64, align 8";
+        this->scope->writeCode(ss_i.str());
+
+        // Initialize i
+        std::ostringstream ss_ii;
+        ss_ii << "store i64 0, i64* %" << ret.reg_i << ", align 8";
+        this->scope->writeCode(ss_ii.str());
+
+        // Allocate result array
+        ret.ret_arr_type.reg_ct = this->genAlloca(result_type, true, len);
+
+        // genLoopHead
+        this->genLoopHead(start_label);
+
+        // Load i
+        std::ostringstream ss_il;
+        unsigned int temp_i_reg = this->scope->reg_ct_local++; // reg that holds value of i
+        ss_il << "  %"  << temp_i_reg << " = load i64, i64* %" << ret.reg_i << ", align 8";
+        this->scope->writeCode(ss_il.str());
+
+        // Compare to len
+        //%8 = icmp ult i64 %7, 5
+        std::ostringstream ss_cmp;
+        unsigned int cmp_reg = this->scope->reg_ct_local++;
+        ss_cmp << "  %" << cmp_reg << " = icmp ult i64 %" << temp_i_reg << ", " << len;
+        this->scope->writeCode(ss_cmp.str());
+
+        // genLoopCondition
+        bool dont_truncate = true;
+        this->genLoopCondition(cmp_reg, body_label, end_label, dont_truncate);
+
+        // If array load arr[i]
+        if (type_a->is_array){
+                type_a->reg_ct = this->genGEP(*type_a, temp_i_reg, type_a->_is_global);
+                type_a->_is_global = false;
+                type_a->is_array = false;
+                type_a->reg_ct = this->genLoadReg(type_a->type, type_a->reg_ct);
+        }
+        if (type_b->is_array){
+                type_b->reg_ct = this->genGEP(*type_b, temp_i_reg, type_b->_is_global);
+                type_b->_is_global = false;
+                type_b->is_array = false;
+                type_b->reg_ct = this->genLoadReg(type_b->type, type_b->reg_ct);
+        }
+        
+        
+        ret.start_label = start_label;
+        // ret.inc_label = inc_label;
+        ret.end_label = end_label;
+        ret.ret_arr_type.type = result_type;
+        ret.ret_arr_type.is_array = true;
+        ret.ret_arr_type._is_global = false;
+        ret.ret_arr_type.array_length = len;
+        return ret;
+}
+
+
+/**
+ * needs reg for i
+ * needs type and length of return array
+ * needs inc_label
+ * needs end_label
+ * needs start_label
+ */
+type_holder_t Parser::genEndArrayOp(array_op_params params, unsigned int expr_reg)
+{
+        // Load i
+        std::ostringstream ss_il;
+        unsigned int temp_i_reg = this->scope->reg_ct_local++; // reg that holds value of i
+        ss_il << "  %"  << temp_i_reg << " = load i64, i64* %" << params.reg_i << ", align 8";
+        this->scope->writeCode(ss_il.str());
+
+        // store expr_reg in result array
+        unsigned int result_i = genGEP(params.ret_arr_type, temp_i_reg, params.ret_arr_type._is_global);
+        this->genStoreReg(params.ret_arr_type.type, expr_reg, result_i, false);
+
+
+        // Increment i
+        std::ostringstream ss_inc;
+        unsigned int inc_i_reg = this->scope->reg_ct_local++; // reg that holds value of i++
+        ss_inc << "  %"  << inc_i_reg << " = add i64 %" << temp_i_reg<< ", 1";
+        this->scope->writeCode(ss_inc.str());
+        
+        //Store i++ in i
+        std::ostringstream ss_store;
+        ss_store << "  store i64 %" << inc_i_reg << ", i64* %" << params.reg_i << ", align 8";
+        this->scope->writeCode(ss_store.str());
+
+        this->genLoopEnd(params.start_label, params.end_label);
+        
+        return params.ret_arr_type;
 }

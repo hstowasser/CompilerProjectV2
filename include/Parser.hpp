@@ -4,9 +4,19 @@
 #include <list>
 #include <map>
 
+typedef struct {
+        unsigned int reg_i;
+        unsigned int start_label;
+        // unsigned int inc_label;
+        unsigned int end_label;
+        type_holder_t ret_arr_type;
+} array_op_params;
+
 class Parser
 {
 private:
+
+
         bool parseProgram(std::list<token_t>::iterator *itr);
         bool parseProgramHeader(std::list<token_t>::iterator *itr);
         bool parseProgramBody(std::list<token_t>::iterator *itr);
@@ -90,15 +100,19 @@ private:
         void genIfEnd(unsigned int end_label);
 
         void genLoopHead(unsigned int start_label);
-        void genLoopCondition(unsigned int reg, unsigned int body_label, unsigned int end_label);
+        void genLoopCondition(unsigned int reg, unsigned int body_label, unsigned int end_label, bool dont_tuncate = false);
         void genLoopEnd( unsigned int start_label, unsigned int end_label);
 
         std::list<std::tuple<std::string, symbol_t>> paramSymbolBuffer;
 
+        array_op_params genSetupArrayOp(type_holder_t* type_a, type_holder_t* type_b, token_type_e result_type); // Changes type_a/b is_arr=false _is_global=false reg_ct to value at index
+
+        type_holder_t genEndArrayOp(array_op_params params, unsigned int expr_reg); // returns resultant array params.ret_arr_type
+
 public:
         Parser(Scope* scope);
         ~Parser();
-        void parse(std::list<token_t> token_list);
+        bool parse(std::list<token_t> token_list);
 
         std::string program_name;
 };

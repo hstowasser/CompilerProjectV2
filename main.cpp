@@ -47,7 +47,13 @@ int main(int argc, char **argv)
         //         print_token(*itr);
         // }
 
-        parser->parse(token_list);
+        bool ret = parser->parse(token_list);
+        if (ret){
+                printf("Pass\n");
+        }else{
+                printf("Fail\n");
+                return -1;
+        }
 
         // Write llvm to temp file
         std::ostringstream ss_ll;
