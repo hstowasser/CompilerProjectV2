@@ -1158,19 +1158,27 @@ bool Parser::parseArithOp(std::list<token_t>::iterator *itr, type_holder_t* para
                         this->next_token(itr); // Move to next token
                         ret = this->parseArithOp(itr, &temp_arithop);
 
-                        if (temp_relation.is_array != temp_arithop.is_array){
-                                error_printf( *itr, "Arithmetic between array and non-array types are not allowed... yet\n");
-                                return false;
-                        } else if ( ((temp_relation.type == T_RW_INTEGER) || (temp_relation.type == T_RW_FLOAT)) &&
+                        if ( ((temp_relation.type == T_RW_INTEGER) || (temp_relation.type == T_RW_FLOAT)) &&
                              ((temp_arithop.type == T_RW_INTEGER) || (temp_arithop.type == T_RW_FLOAT))) {
                                 // Combinations of int and float are allowed
+                                token_type_e result_type;
                                 if (temp_relation.type == T_RW_FLOAT || temp_arithop.type == T_RW_FLOAT){
                                         parameter_type->type = T_RW_FLOAT; // Default to float
+                                        result_type = T_RW_FLOAT;
                                 }else{
                                         parameter_type->type = T_RW_INTEGER;
+                                        result_type = T_RW_INTEGER;
                                 }
-                                parameter_type->reg_ct =
+
+                                if (temp_relation.is_array || temp_arithop.is_array){
+                                        array_op_params params = this->genSetupArrayOp(&temp_relation, &temp_arithop, result_type);
+                                        unsigned int temp_reg_ct = this->genArithOp(op, temp_relation.type, temp_relation.reg_ct, temp_arithop.type, temp_arithop.reg_ct);
+                                        *parameter_type = this->genEndArrayOp( params, temp_reg_ct);
+                                }else{
+                                        parameter_type->reg_ct =
                                         this->genArithOp(op, temp_relation.type, temp_relation.reg_ct, temp_arithop.type, temp_arithop.reg_ct);
+                                } 
+                                
                         } else {
                                 error_printf( *itr, "Arithmetic Ops (+,-) are only defined for integers and floats \n");
                                 return false;
