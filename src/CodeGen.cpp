@@ -465,27 +465,40 @@ unsigned int Parser::genGEP_Head(type_holder_t parameter_type,  bool global /*= 
         return d;
 }
 
-unsigned int Parser::genTerm(token_type_e op, token_type_e type, unsigned int reg_a, unsigned int reg_b)
+
+
+
+unsigned int Parser::genTerm(token_type_e op, token_type_e type_a, unsigned int reg_a, token_type_e type_b, unsigned int reg_b)
 {
         std::ostringstream ss;
-        unsigned int d = this->scope->reg_ct_local;
+        unsigned int d;
 
-        if ( op == T_OP_TERM_DIVIDE){
-                if ( type == T_RW_FLOAT){
-                        ss << "  %" << d << " = fdiv float %" << reg_a << ", %" << reg_b;
-                } else { // T_RW_INTEGER
-                        ss << "  %" << d << " = sdiv i32 %" << reg_a << ", %" << reg_b;
+        if ( (type_a == T_RW_FLOAT) || (type_b == T_RW_FLOAT)) {
+                if ( type_a == T_RW_INTEGER){
+                        // convert to float
+                        reg_a = genIntToFloat(reg_a);
+                } else if (type_b == T_RW_INTEGER) {
+                        // convert to float
+                        reg_b = genIntToFloat(reg_b);
                 }
-        } else { //T_OP_TERM_MULTIPLY
-                if ( type == T_RW_FLOAT){
+                d = this->scope->reg_ct_local++;
+
+                if ( op == T_OP_TERM_DIVIDE){
+                        ss << "  %" << d << " = fdiv float %" << reg_a << ", %" << reg_b;
+
+                } else { //T_OP_TERM_MULTIPLY
                         ss << "  %" << d << " = fmul float %" << reg_a << ", %" << reg_b;
-                } else { // T_RW_INTEGER
+                }
+        } else { // Both are integers
+                d = this->scope->reg_ct_local++;
+                if ( op == T_OP_TERM_DIVIDE){
+                        ss << "  %" << d << " = sdiv i32 %" << reg_a << ", %" << reg_b;
+                } else { //T_OP_TERM_MULTIPLY
                         ss << "  %" << d << " = mul nsw i32 %" << reg_a << ", %" << reg_b;
                 }
-        }
+        }        
 
         this->scope->writeCode(ss.str());
-        this->scope->reg_ct_local++;
         return d;
 }
 

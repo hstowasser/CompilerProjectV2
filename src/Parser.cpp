@@ -331,7 +331,7 @@ bool Parser::parseAssignmentStatement(std::list<token_t>::iterator *itr)
         // if array
                 // use llvm.memcpy
 
-        genAssignmentStatement(dest_type, expr_type);
+        this->genAssignmentStatement(dest_type, expr_type);
 
         return ret; 
 }
@@ -516,7 +516,7 @@ bool Parser::parseLoopStatement(std::list<token_t>::iterator *itr)
                 }
         }
 
-        genLoopEnd( start_label, end_label);
+        this->genLoopEnd( start_label, end_label);
 
 
         if ((*itr)->type == T_RW_END){
@@ -555,7 +555,7 @@ bool Parser::parseReturnStatement(std::list<token_t>::iterator *itr)
         }
 
         //Check that procedure type exactly matches return type
-        ret = GetProcedureType(&procedure_type);
+        ret = this->GetProcedureType(&procedure_type);
         if (!ret){
                 return false; // Failed to find procedure type
         }
@@ -565,7 +565,7 @@ bool Parser::parseReturnStatement(std::list<token_t>::iterator *itr)
                 return false;
         }
 
-        genReturn(procedure_type.type, expr_type.reg_ct);
+        this->genReturn(procedure_type.type, expr_type.reg_ct);
 
         return ret;
 }
@@ -678,7 +678,7 @@ bool Parser::parseProcedureDeclaration(std::list<token_t>::iterator *itr, bool g
 
         ret = this->parseProcedureBody(itr);
 
-        genProcedureEnd();
+        this->genProcedureEnd();
         this->scope->PopScope();
 
         return ret;
@@ -760,7 +760,7 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
                 this->scope->AddSymbol(name, symbol);
         }
 
-        genProcedureHeader(symbol, name);
+        this->genProcedureHeader(symbol, name);
 
         scope->reg_ct_local += symbol.parameter_ct; // We need to set reg_ct_local before calling genVariableDeclaration. Sloppy
 
@@ -773,9 +773,9 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
                 symbol_t param_symbol = std::get<1>(tup);
                 symbol.variable_type.reg_ct = param_ct; // Set the reg_ct for it.
 
-                genVariableDeclaration( &param_symbol, false);
+                this->genVariableDeclaration( &param_symbol, false);
                 // Store parameter data in local memory
-                genStoreReg(param_symbol.variable_type.type, param_ct, param_symbol.variable_type.reg_ct, false);
+                this->genStoreReg(param_symbol.variable_type.type, param_ct, param_symbol.variable_type.reg_ct, false);
 
                 this->scope->AddSymbol(name, param_symbol);
 
@@ -896,7 +896,7 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
                 }
         }
 
-        genVariableDeclaration( &symbol, global); // Generate code
+        this->genVariableDeclaration( &symbol, global); // Generate code
 
         if (global){
                 this->scope->AddGlobalSymbol(name, symbol);
@@ -1230,7 +1230,7 @@ bool Parser::parseRelation(std::list<token_t>::iterator *itr, type_holder_t* par
                                 if (is_equal){
                                         parameter_type->type = T_RW_BOOL;
                                         parameter_type->reg_ct = 
-                                                genRelationStrings(op, temp_term.reg_ct, temp_relation.reg_ct);
+                                                this->genRelationStrings(op, temp_term.reg_ct, temp_relation.reg_ct);
                                 } else {
                                         error_printf( *itr, "Strings only support == and != relation operators \n");
                                         return false;
@@ -1278,7 +1278,7 @@ bool Parser::parseProcedureCall(std::list<token_t>::iterator *itr, type_holder_t
         if ((*itr)->type == T_IDENTIFIER){
                 // Check that identifier is defined as a procedure
                 // set parameter type to return type of procedure
-                if (FindSymbol_Helper(itr, &temp_symbol)){
+                if (this->FindSymbol_Helper(itr, &temp_symbol)){
                         if( temp_symbol.type == ST_PROCEDURE ){
                                 *parameter_type = temp_symbol.variable_type;
                         }else{
@@ -1397,16 +1397,20 @@ bool Parser::parseTerm(std::list<token_t>::iterator *itr, type_holder_t* paramet
                 this->next_token(itr); // Move to next token
                 ret = this->parseTerm(itr, &temp_term);
 
-                if (type_holder_cmp(temp_factor, temp_term)){
-                        if (temp_factor.type == T_RW_INTEGER) {
-                                // Combinations of int and float are allowed
-                                parameter_type->type = T_RW_INTEGER;
-                        } else if (temp_factor.type == T_RW_FLOAT){
-                                parameter_type->type = T_RW_FLOAT;
+                if ( (temp_factor.type == T_RW_INTEGER || temp_factor.type == T_RW_FLOAT) &&
+                     (temp_term.type == T_RW_INTEGER || temp_term.type == T_RW_FLOAT))
+                {
+                        token_type_e result_type = (temp_factor.type == T_RW_FLOAT) || (temp_term.type == T_RW_FLOAT) 
+                                ? T_RW_FLOAT : T_RW_INTEGER; // If either is float then the result is float
+
+                        if (temp_factor.is_array == false && temp_term.is_array == false){
+                                parameter_type->reg_ct = this->genTerm( op, temp_factor.type, temp_factor.reg_ct, temp_term.type, temp_term.reg_ct);
                         } else {
-                                error_printf( *itr, "Terms must both be either integers or floats \n");
+                                array_op_params params = this->genSetupArrayOp(&temp_factor, &temp_term, result_type);
+                                unsigned int temp_reg_ct = this->genTerm( op, temp_factor.type, temp_factor.reg_ct, temp_term.type, temp_term.reg_ct);
+                                *parameter_type = this->genEndArrayOp( params, temp_reg_ct);
                         }
-                        parameter_type->reg_ct = genTerm( op, temp_factor.type, temp_factor.reg_ct, temp_term.reg_ct);
+                        
                 } else {
                         error_printf( *itr, "Types do not match. Terms must both be either integers or floats \n");
                         return false;
@@ -1429,7 +1433,7 @@ bool Parser::parseName(std::list<token_t>::iterator *itr, type_holder_t* paramet
                 // Lookup in symbol table.
                 // Set parameter_type
                 // TODO consider replacing global with parameter_type->_is_global
-                ret = FindVariableType_Helper(itr, parameter_type, &global); // returns false if not found
+                ret = this->FindVariableType_Helper(itr, parameter_type, &global); // returns false if not found
                 if (!ret){
                         return false;
                 }
@@ -1503,19 +1507,19 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr, type_holder_t* param
                 }
                 break;
         case T_RW_TRUE:
-                genConstant(*itr, parameter_type);
+                this->genConstant(*itr, parameter_type);
                 parameter_type->type = T_RW_BOOL;
                 this->next_token(itr); // Move to next token
                 ret = true;
                 break;
         case T_RW_FALSE:
-                genConstant(*itr, parameter_type);
+                this->genConstant(*itr, parameter_type);
                 parameter_type->type = T_RW_BOOL;
                 this->next_token(itr); // Move to next token
                 ret = true;
                 break;
         case T_CONST_STRING:
-                genConstant(*itr, parameter_type);
+                this->genConstant(*itr, parameter_type);
                 parameter_type->type = T_RW_STRING;
                 this->next_token(itr); // Move to next token
                 ret = true;
@@ -1523,12 +1527,12 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr, type_holder_t* param
         case T_OP_ARITH_MINUS:
                 this->next_token(itr); // Move to next token
                 if ((*itr)->type == T_CONST_INTEGER){
-                        genConstant(*itr, parameter_type, true);
+                        this->genConstant(*itr, parameter_type, true);
                         parameter_type->type = T_RW_INTEGER;
                         this->next_token(itr); // Move to next token
                         ret = true;
                 } else if((*itr)->type == T_CONST_FLOAT){
-                        genConstant(*itr, parameter_type, true);
+                        this->genConstant(*itr, parameter_type, true);
                         parameter_type->type = T_RW_FLOAT;
                         this->next_token(itr); // Move to next token
                         ret = true;
@@ -1546,13 +1550,13 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr, type_holder_t* param
                 }
                 break;
         case T_CONST_INTEGER:
-                genConstant(*itr, parameter_type);
+                this->genConstant(*itr, parameter_type);
                 parameter_type->type = T_RW_INTEGER;
                 this->next_token(itr); // Move to next token
                 ret = true;
                 break;
         case T_CONST_FLOAT:
-                genConstant(*itr, parameter_type);
+                this->genConstant(*itr, parameter_type);
                 parameter_type->type = T_RW_FLOAT;
                 this->next_token(itr); // Move to next token
                 ret = true;
