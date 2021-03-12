@@ -864,3 +864,22 @@ void Parser::genLoopEnd( unsigned int start_label, unsigned int end_label)
         this->scope->writeCode(ss0.str());
         this->scope->writeCode(ss1.str());
 }
+
+unsigned int Parser::genNegate(token_type_e type, unsigned int reg)
+{
+        std::ostringstream ss;
+
+        unsigned int d = this->scope->reg_ct_local;
+
+        if (type == T_RW_INTEGER){
+                // %5 = sub nsw i32 0, %4
+                ss << "  %" << d << " = sub nsw i32 0, %" << reg;
+        } else { // T_RW_FLOAT
+                // %5 = fneg float %4
+                ss << "  %" << d << " = fneg float %" << reg;
+        }        
+
+        this->scope->writeCode(ss.str());
+        this->scope->reg_ct_local++;
+        return d;
+}

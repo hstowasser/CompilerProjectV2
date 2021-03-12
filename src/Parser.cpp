@@ -222,9 +222,6 @@ bool Parser::parseDestination(std::list<token_t>::iterator *itr, type_holder_t* 
                 if (parameter_type->is_array == false){
                         error_printf( *itr, "Identifier is not an array\n");
                         return false;
-                } else {
-                        // Set is_array to false because we are grabbing one element
-                        parameter_type->is_array = false;
                 }
 
                 this->next_token(itr); // Move to next token
@@ -1440,6 +1437,7 @@ bool Parser::parseName(std::list<token_t>::iterator *itr, type_holder_t* paramet
                 unsigned int index_reg = this->genIntToLong(expr_type.reg_ct);
                 unsigned int temp_reg = this->genGEP(*parameter_type, index_reg, global);
                 parameter_type->reg_ct = this->genLoadReg(parameter_type->type, temp_reg, false);
+                parameter_type->is_array = false; // We are looking at only a single element
 
         } else {
                 // load variable
@@ -1510,9 +1508,16 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr, type_holder_t* param
                         this->next_token(itr); // Move to next token
                         ret = true;
                 } else{
-                        // TODO modify code generation for this case
-                        // multiply by -1 ?
                         ret = this->parseName(itr, parameter_type);
+                        if (parameter_type->is_array || 
+                            parameter_type->type == T_RW_STRING || 
+                            parameter_type->type == T_RW_BOOL){
+                                error_printf( *itr, "Only Integers and Floats can be cast to negative\n");
+                                return false;
+                        } else {
+                                // Cast to negative
+                                parameter_type->reg_ct = genNegate(parameter_type->type, parameter_type->reg_ct);
+                        }
                 }
                 break;
         case T_CONST_INTEGER:
