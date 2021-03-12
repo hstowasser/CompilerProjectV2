@@ -85,6 +85,8 @@ public:
         void PrintScope(); //For Debugging
         void PrintCode();
 
+        void PrintCodeToFile(std::string filename);
+
         // CODE GENERATION
         void writeCode(std::string line, bool global = false);
 

@@ -5,6 +5,10 @@
 #include <iostream>
 #include <fstream>
 #include <map>
+#include <sstream>
+#include <cstring>
+
+#include <unistd.h>
 
 using namespace std;
 
@@ -16,14 +20,26 @@ void destroy_list(list<token_t>* token_list)
         }  
 }
 
-int main()
+int main(int argc, char **argv)
 {
+        if ( argc != 2) {
+                printf("Invalid input argument count.\n");
+                printf("Correct usage is :\n");
+                printf("   geecc <file>\n");
+                return -1;
+        }
+
+        std::ostringstream ss;
+        
+        ss << argv[1];
+        std::string filename = ss.str();
+
         Scope *scope = new Scope();
         Scanner *scanner = new Scanner();
         Parser *parser = new Parser(scope);
         list<token_t> token_list;
 
-        scanner->scanFile("test1.txt", &token_list);
+        scanner->scanFile(argv[1], &token_list);
         delete scanner;
 
         // list<token_t>::iterator itr;
@@ -33,8 +49,18 @@ int main()
 
         parser->parse(token_list);
 
-        scope->PrintScope();
-        scope->PrintCode();
+        // Write llvm to temp file
+        std::ostringstream ss_ll;
+        ss_ll << filename << ".ll";
+        std::string asm_file = ss_ll.str();
+        scope->PrintCodeToFile(asm_file);
+
+        std::ostringstream ss_cmd;
+        ss_cmd << "llvm-as " << asm_file << " -o " << parser->program_name;
+        system(ss_cmd.str().c_str());
+
+        //scope->PrintScope();
+        //scope->PrintCode();
 
         destroy_list(&token_list);
 

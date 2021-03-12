@@ -4,13 +4,13 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#if 1
+#if 0
 #define debug_print_call() printf("%s\n", __FUNCTION__)
 #else
 #define debug_print_call()
 #endif
 
-#if 1
+#if 0
 #define debug_print_token(itr) print_token(itr)
 #else
 #define debug_print_token(itr)
@@ -1026,7 +1026,8 @@ bool Parser::parseProgramHeader(std::list<token_t>::iterator *itr)
         // parse identifier
         if ((*itr)->type == T_IDENTIFIER){
                 // Create scope for program
-                this->scope->PushScope(*(*itr)->getStringValue());
+                this->scope->PushScope(get_string(itr));
+                this->program_name = get_string(itr);
                 this->genProgramHeader();
 
                 this->next_token(itr); // Move to next token

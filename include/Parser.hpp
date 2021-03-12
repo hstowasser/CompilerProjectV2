@@ -99,4 +99,6 @@ public:
         Parser(Scope* scope);
         ~Parser();
         void parse(std::list<token_t> token_list);
+
+        std::string program_name;
 };

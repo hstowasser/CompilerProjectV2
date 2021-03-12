@@ -1,5 +1,6 @@
 #include "Scope.hpp"
 #include <iostream>
+#include <fstream>
 
 bool type_holder_cmp(type_holder_t a,  type_holder_t b)
 {
@@ -342,6 +343,28 @@ void Scope::PrintCode(){
         std::cout << ";******************** " << it->first << " ********************" << std::endl;
         PrintList(it->second);
     }
+}
+
+void PrintListToFile(std::list<std::string> list, std::ofstream* file)
+{
+    std::list<std::string>::iterator it;
+    for (it = list.begin(); it != list.end(); it++){
+        *file << *it << std::endl;
+    }
+}
+
+void Scope::PrintCodeToFile(std::string filename){
+    std::ofstream file;
+    file.open(filename);
+    file << ";******************** LLVM Assembly ********************" << std::endl;
+    PrintListToFile(this->global_code, &file);
+
+    std::map<std::string, std::list<std::string>>::iterator it;
+    for (it = this->local_code_map.begin(); it != this->local_code_map.end(); it++){
+        file << ";******************** " << it->first << " ********************" << std::endl;
+        PrintListToFile(it->second, &file);
+    }
+    file.close();
 }
 
 unsigned int Scope::NewLabel()
