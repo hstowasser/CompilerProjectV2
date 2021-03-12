@@ -299,6 +299,7 @@ void Parser::genProgramBodyEnd()
 
 void Parser::genProcedureHeader(symbol_t symbol, std::string name)
 {
+        name.pop_back(); // remove Duplicate null terminator
         std::ostringstream ss;
         if ( symbol.variable_type.is_array){
                 // I don't think this is supported
@@ -382,6 +383,7 @@ unsigned int Parser::genProcedureCall(symbol_t symbol, std::string name, std::li
 {
         std::ostringstream ss;
         unsigned int d = this->scope->reg_ct_local;
+        name.pop_back(); // remove Duplicate null terminator
 
         ss << "  %" << d << " = call " << get_llvm_type(symbol.variable_type.type) << " @" << name << symbol._procedure_ct << "(";
 
