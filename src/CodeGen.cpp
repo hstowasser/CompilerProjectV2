@@ -932,6 +932,21 @@ unsigned int Parser::genNegate(token_type_e type, unsigned int reg)
         return d;
 }
 
+unsigned int Parser::genNot(token_type_e type, unsigned int reg)
+{
+        std::ostringstream ss;
+
+        unsigned int d = this->scope->reg_ct_local;
+
+
+        ss << "  %" << d << " = xor i32 %" << reg << ", -1";
+   
+
+        this->scope->writeCode(ss.str());
+        this->scope->reg_ct_local++;
+        return d;
+}
+
 array_op_params Parser::genSetupArrayOp(type_holder_t* type_a, type_holder_t* type_b, token_type_e result_type)
 {
         array_op_params ret;

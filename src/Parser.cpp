@@ -1087,6 +1087,12 @@ bool Parser::parseExpression(std::list<token_t>::iterator *itr, type_holder_t* p
         if (bitwise_op){
                 if (temp_arithop.type == T_RW_INTEGER) {
                         // Good
+                        if (temp_arithop.is_array == false){
+                                temp_arithop.reg_ct = this->genNot(temp_arithop.type, temp_arithop.reg_ct);
+                        } else {
+                                error_printf( *itr, "Bitwise operation NOT is not defined for arrays \n");
+                                return false;
+                        }
                         // TODO Implement bitwise not codegen
                 } else {
                         error_printf( *itr, "Bitwise operation NOT is only defined for integers \n");
@@ -1541,7 +1547,7 @@ bool Parser::parseFactor(std::list<token_t>::iterator *itr, type_holder_t* param
                                 return false;
                         } else {
                                 // Cast to negative
-                                parameter_type->reg_ct = genNegate(parameter_type->type, parameter_type->reg_ct);
+                                parameter_type->reg_ct = this->genNegate(parameter_type->type, parameter_type->reg_ct);
                         }
                 }
                 break;
