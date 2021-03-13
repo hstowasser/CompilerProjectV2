@@ -106,9 +106,10 @@ private:
         std::list<std::tuple<std::string, symbol_t>> paramSymbolBuffer;
 
         array_op_params genSetupArrayOp(type_holder_t* type_a, type_holder_t* type_b, token_type_e result_type); // Changes type_a/b is_arr=false _is_global=false reg_ct to value at index
-
         type_holder_t genEndArrayOp(array_op_params params, unsigned int expr_reg); // returns resultant array params.ret_arr_type
 
+        array_op_params genSetupArrayAssign(type_holder_t* type_a, type_holder_t* type_b, token_type_e result_type);
+        void genEndArrayAssign(array_op_params params);
 public:
         Parser(Scope* scope);
         ~Parser();

@@ -249,32 +249,36 @@ void Parser::genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_
         //unsigned int d = this->scope->reg_ct_local;
 
         if (dest_type.is_array){
-                std::ostringstream ss;
-                std::ostringstream ss0;
-                std::ostringstream ss1;
-                unsigned int size = get_llvm_size(dest_type.type);
-                unsigned int len = dest_type.array_length * size;
+                if (type_holder_cmp(dest_type, expr_type)){
+                        std::ostringstream ss;
+                        std::ostringstream ss0;
+                        std::ostringstream ss1;
+                        unsigned int size = get_llvm_size(dest_type.type);
+                        unsigned int len = dest_type.array_length * size;
 
-                // GEP in parseName was removed so will need to add a GEP here.
-                unsigned int reg_a = this->genGEP_Head(dest_type, dest_type._is_global);
-                unsigned int reg_b = this->genGEP_Head(expr_type, expr_type._is_global);
+                        // GEP in parseName was removed so will need to add a GEP here.
+                        unsigned int reg_a = this->genGEP_Head(dest_type, dest_type._is_global);
+                        unsigned int reg_b = this->genGEP_Head(expr_type, expr_type._is_global);
 
-                // bitcast both to *8
-                //%8 = bitcast i32* %7 to i8*
-                ss0 << "  %" << this->scope->reg_ct_local <<" = bitcast " << dtype_str << "* %" << reg_a << " to i8*";
-                reg_a = this->scope->reg_ct_local;
-                this->scope->reg_ct_local++;
+                        // bitcast both to *8
+                        //%8 = bitcast i32* %7 to i8*
+                        ss0 << "  %" << this->scope->reg_ct_local <<" = bitcast " << dtype_str << "* %" << reg_a << " to i8*";
+                        reg_a = this->scope->reg_ct_local;
+                        this->scope->reg_ct_local++;
 
-                ss1 << "  %" << this->scope->reg_ct_local <<" = bitcast " << dtype_str << "* %" << reg_b << " to i8*";
-                reg_b = this->scope->reg_ct_local;
-                this->scope->reg_ct_local++;
+                        ss1 << "  %" << this->scope->reg_ct_local <<" = bitcast " << dtype_str << "* %" << reg_b << " to i8*";
+                        reg_b = this->scope->reg_ct_local;
+                        this->scope->reg_ct_local++;
 
-                ss << "  call void @llvm.memcpy.p0i8.p0i8.i64(i8* align " << size << " %" << reg_a << ", i8* align " 
-                        << size << " %" << reg_b << ", i64 " << len << ", i1 false)";
-                
-                this->scope->writeCode(ss0.str());
-                this->scope->writeCode(ss1.str());
-                this->scope->writeCode(ss.str());
+                        ss << "  call void @llvm.memcpy.p0i8.p0i8.i64(i8* align " << size << " %" << reg_a << ", i8* align " 
+                                << size << " %" << reg_b << ", i64 " << len << ", i1 false)";
+                        
+                        this->scope->writeCode(ss0.str());
+                        this->scope->writeCode(ss1.str());
+                        this->scope->writeCode(ss.str());
+                } else {
+                        // Should be handled by loop wrapper
+                }
         } else {
                 if (type_holder_cmp(dest_type, expr_type)){
                         // Both are the same
@@ -284,11 +288,27 @@ void Parser::genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_
                 } else if ( ((expr_type.type == T_RW_INTEGER) || (expr_type.type == T_RW_FLOAT)) &&
                         ((dest_type.type == T_RW_INTEGER) || (dest_type.type == T_RW_FLOAT))) {
                         // Combinations of int and float are allowed
-                        // TODO Typecase to destination
+                        // Typecase to destination
+                        if ( dest_type.type == T_RW_INTEGER){
+                                expr_type.reg_ct = this->genFloatToInt(expr_type.reg_ct);
+                                expr_type.type = T_RW_INTEGER;
+                        } else {
+                                expr_type.reg_ct = this->genIntToFloat(expr_type.reg_ct);
+                                expr_type.type = T_RW_FLOAT;
+                        }
+                        genStoreReg(dest_type.type, expr_type.reg_ct, dest_type.reg_ct, dest_type._is_global);
                 } else if ( ((expr_type.type == T_RW_INTEGER) || (expr_type.type == T_RW_BOOL)) &&
                         ((dest_type.type == T_RW_INTEGER) || (dest_type.type == T_RW_BOOL))) {
                         // Combinations of int and bool are allowed
-                        // TODO Typecast to destination
+                        // Typecast to destination
+                        if ( dest_type.type == T_RW_INTEGER){
+                                expr_type.reg_ct = this->genBoolToInt(expr_type.reg_ct);
+                                expr_type.type = T_RW_INTEGER;
+                        } else {
+                                expr_type.reg_ct = this->genIntToBool(expr_type.reg_ct);
+                                expr_type.type = T_RW_BOOL;
+                        }
+                        genStoreReg(dest_type.type, expr_type.reg_ct, dest_type.reg_ct, dest_type._is_global);
                 }
         }
         
@@ -1018,4 +1038,92 @@ type_holder_t Parser::genEndArrayOp(array_op_params params, unsigned int expr_re
         this->genLoopEnd(params.start_label, params.end_label);
         
         return params.ret_arr_type;
+}
+
+
+array_op_params Parser::genSetupArrayAssign(type_holder_t* type_a, type_holder_t* type_b, token_type_e result_type)
+{
+        array_op_params ret;
+
+        unsigned int start_label = this->scope->NewLabel();
+        unsigned int body_label = this->scope->NewLabel();
+        // unsigned int inc_label = this->scope->NewLabel();
+        unsigned int end_label = this->scope->NewLabel();
+
+        unsigned int len = type_a->is_array ? type_a->array_length : type_b->array_length;
+        //unsigned int size = get_llvm_size(result_type);
+
+        // Allocate i
+        std::ostringstream ss_i;
+        ret.reg_i = this->scope->reg_ct_local++; // Store location of i
+        ss_i << "  %"  << ret.reg_i << " = alloca i64, align 8";
+        this->scope->writeCode(ss_i.str());
+
+        // Initialize i
+        std::ostringstream ss_ii;
+        ss_ii << "store i64 0, i64* %" << ret.reg_i << ", align 8";
+        this->scope->writeCode(ss_ii.str());
+
+        // genLoopHead
+        this->genLoopHead(start_label);
+
+        // Load i
+        std::ostringstream ss_il;
+        unsigned int temp_i_reg = this->scope->reg_ct_local++; // reg that holds value of i
+        ss_il << "  %"  << temp_i_reg << " = load i64, i64* %" << ret.reg_i << ", align 8";
+        this->scope->writeCode(ss_il.str());
+
+        // Compare to len
+        //%8 = icmp ult i64 %7, 5
+        std::ostringstream ss_cmp;
+        unsigned int cmp_reg = this->scope->reg_ct_local++;
+        ss_cmp << "  %" << cmp_reg << " = icmp ult i64 %" << temp_i_reg << ", " << len;
+        this->scope->writeCode(ss_cmp.str());
+
+        // genLoopCondition
+        bool dont_truncate = true;
+        this->genLoopCondition(cmp_reg, body_label, end_label, dont_truncate);
+
+        // If array GEP arr[i]
+        if (type_a->is_array){
+                type_a->reg_ct = this->genGEP(*type_a, temp_i_reg, type_a->_is_global);
+                type_a->_is_global = false;
+                type_a->is_array = false;
+                // Don't load the destination
+                //type_a->reg_ct = this->genLoadReg(type_a->type, type_a->reg_ct);
+        }
+        if (type_b->is_array){
+                type_b->reg_ct = this->genGEP(*type_b, temp_i_reg, type_b->_is_global);
+                type_b->_is_global = false;
+                type_b->is_array = false;
+                type_b->reg_ct = this->genLoadReg(type_b->type, type_b->reg_ct);
+        }
+        
+        
+        ret.start_label = start_label;
+        ret.end_label = end_label;
+        return ret;
+}
+
+void Parser::genEndArrayAssign(array_op_params params)
+{
+        // Load i
+        std::ostringstream ss_il;
+        unsigned int temp_i_reg = this->scope->reg_ct_local++; // reg that holds value of i
+        ss_il << "  %"  << temp_i_reg << " = load i64, i64* %" << params.reg_i << ", align 8";
+        this->scope->writeCode(ss_il.str());
+
+
+        // Increment i
+        std::ostringstream ss_inc;
+        unsigned int inc_i_reg = this->scope->reg_ct_local++; // reg that holds value of i++
+        ss_inc << "  %"  << inc_i_reg << " = add i64 %" << temp_i_reg<< ", 1";
+        this->scope->writeCode(ss_inc.str());
+        
+        //Store i++ in i
+        std::ostringstream ss_store;
+        ss_store << "  store i64 %" << inc_i_reg << ", i64* %" << params.reg_i << ", align 8";
+        this->scope->writeCode(ss_store.str());
+
+        this->genLoopEnd(params.start_label, params.end_label);
 }

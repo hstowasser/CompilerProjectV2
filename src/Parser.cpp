@@ -292,46 +292,32 @@ bool Parser::parseAssignmentStatement(std::list<token_t>::iterator *itr)
         if (type_holder_cmp(dest_type, expr_type)){
                 // Both are the same
                 
-        } else if (dest_type.is_array != expr_type.is_array){
-                error_printf( *itr, "Assignment between array and non-array types is not allowed \n");
-                return false;
         } else if ( ((expr_type.type == T_RW_INTEGER) || (expr_type.type == T_RW_FLOAT)) &&
                 ((dest_type.type == T_RW_INTEGER) || (dest_type.type == T_RW_FLOAT))) {
                 // Combinations of int and float are allowed
-                // Typecase to destination
-                if ( dest_type.type == T_RW_INTEGER){
-                        expr_type.reg_ct = this->genFloatToInt(expr_type.reg_ct);
-                        expr_type.type = T_RW_INTEGER;
-                } else {
-                        expr_type.reg_ct = this->genIntToFloat(expr_type.reg_ct);
-                        expr_type.type = T_RW_FLOAT;
-                }
+                
         } else if ( ((expr_type.type == T_RW_INTEGER) || (expr_type.type == T_RW_BOOL)) &&
                 ((dest_type.type == T_RW_INTEGER) || (dest_type.type == T_RW_BOOL))) {
                 // Combinations of int and bool are allowed
-                // Typecast to destination
-                if ( dest_type.type == T_RW_INTEGER){
-                        expr_type.reg_ct = this->genBoolToInt(expr_type.reg_ct);
-                        expr_type.type = T_RW_INTEGER;
-                } else {
-                        expr_type.reg_ct = this->genIntToBool(expr_type.reg_ct);
-                        expr_type.type = T_RW_BOOL;
-                }
+
         } else {
                 error_printf( *itr, "Destination type does not match expression \n"); // TODO print types
                 return false;
         }
 
-        // Codegeneration
-        // if int | float | bool
-                // store <destination_type> <expression>, <destination_type>* <destination_ptr>
-                // store <i32/float/bool> %current, <i32/float/bool>* symbol_table_lookup_%reg
-        // if string
-                // change pointer
-        // if array
-                // use llvm.memcpy
+        if ( (!type_holder_cmp(dest_type, expr_type)) && (dest_type.is_array || expr_type.is_array)){
+                array_op_params params = genSetupArrayAssign(&dest_type, &expr_type, dest_type.type);
+                this->genAssignmentStatement(dest_type, expr_type);
+                this->genEndArrayAssign( params);
+        } else {
+                this->genAssignmentStatement(dest_type, expr_type);
+        }
 
-        this->genAssignmentStatement(dest_type, expr_type);
+        
+
+
+
+        
 
         return ret; 
 }
@@ -1122,9 +1108,9 @@ bool Parser::parseExpression(std::list<token_t>::iterator *itr, type_holder_t* p
                         if (temp_arithop.is_array == false && temp_expression.is_array == false){
                                 parameter_type->reg_ct = this->genExpression(op, temp_arithop.reg_ct, temp_expression.reg_ct);
                         }else{
-                                array_op_params params = genSetupArrayOp(&temp_arithop, &temp_expression, T_RW_INTEGER);
+                                array_op_params params = this->genSetupArrayOp(&temp_arithop, &temp_expression, T_RW_INTEGER);
                                 unsigned int temp_reg_ct = this->genExpression(op, temp_arithop.reg_ct, temp_expression.reg_ct);
-                                *parameter_type = genEndArrayOp( params, temp_reg_ct);
+                                *parameter_type = this->genEndArrayOp( params, temp_reg_ct);
                         }
                 } else {
                         error_printf( *itr, "Bitwise operations AND/OR are only defined for integers \n");
