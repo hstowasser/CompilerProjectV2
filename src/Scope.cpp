@@ -56,7 +56,8 @@ Scope::Scope()
     this->AddGlobalSymbol(putBoolName,putBool);
     this->writeCode("define i8 @PUTBOOL0(i8 %0) {", true);
     this->writeCode("  %2 = getelementptr [4 x i8], [4 x i8]* @.str0, i64 0, i64 0", true);
-    this->writeCode("  call void (i8*, ...) @printf( i8* %2, i8 %0)", true);
+    this->writeCode("  %3 = zext i8 %0 to i32", true);
+    this->writeCode("  call void (i8*, ...) @printf( i8* %2, i32 %3)", true);
     this->writeCode("  ret i8 0", true);
     this->writeCode("}", true);
 
