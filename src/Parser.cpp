@@ -655,22 +655,23 @@ bool Parser::parseProcedureDeclaration(std::list<token_t>::iterator *itr, bool g
 {
         debug_print_call();
         bool ret = false;
+        type_holder_t return_type;
 
         // parseProcedureHeader
-        ret = this->parseProcedureHeader(itr, global);
+        ret = this->parseProcedureHeader(itr, &return_type, global);
         if (!ret){
                 return false;
         }
 
         ret = this->parseProcedureBody(itr);
 
-        this->genProcedureEnd();
+        this->genProcedureEnd(return_type);
         this->scope->PopScope();
 
         return ret;
 }
 
-bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global)
+bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, type_holder_t* return_type, bool global)
 {
         symbol_t symbol;
         std::string name;
@@ -704,8 +705,15 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, bool global
         }
 
         // parseTypeMark
-        ret = this->parseTypeMark(itr,global,&symbol);
+        ret = this->parseTypeMark(itr,global, &symbol);
         if (!ret){
+                return false;
+        }else{
+                *return_type = symbol.variable_type;
+        }
+
+        if (symbol.variable_type.is_array){
+                error_printf( *itr, "Array return types are not supported \n");
                 return false;
         }
 
@@ -788,6 +796,10 @@ bool Parser::parseParameterList(std::list<token_t>::iterator *itr, bool global /
                         this->next_token(itr); // Move to next token
                 }
                 ret = this->parseParameter(itr, &temp_parameter_type); // Parameters of a global function are local
+                if (temp_parameter_type.is_array){
+                        error_printf( *itr, "Array parameters types are not supported \n");
+                        return false;
+                }
                 temp_param_list.push_back(temp_parameter_type);
                 symbol->parameter_ct++; // Increment parameterlist counter
                 first = false;

@@ -351,8 +351,29 @@ void Parser::genProcedureHeader(symbol_t symbol, std::string name)
         
 }
 
-void Parser::genProcedureEnd()
+void Parser::genProcedureEnd(type_holder_t return_type)
 {
+        if (return_type.is_array == false){
+                switch (return_type.type)
+                {
+                case T_RW_INTEGER:
+                        this->scope->writeCode("  ret i32 0");
+                        break;
+                case T_RW_FLOAT:
+                        this->scope->writeCode("  ret float 0.0");
+                        break;
+                case T_RW_BOOL:
+                        this->scope->writeCode("  ret i8 0");
+                        break;
+                case T_RW_STRING:
+                        this->scope->writeCode("  ret i8* null");
+                        break;
+                default:
+                        break;
+                }
+        } else {
+                // Array returns not supported
+        }
         this->scope->writeCode("}");
 }
 

@@ -30,7 +30,7 @@ private:
 
         bool parseDestination(std::list<token_t>::iterator *itr, type_holder_t* parameter_type);
 
-        bool parseProcedureHeader(std::list<token_t>::iterator *itr, bool global);
+        bool parseProcedureHeader(std::list<token_t>::iterator *itr, type_holder_t* return_type, bool global);
         bool parseProcedureBody(std::list<token_t>::iterator *itr);
 
         bool parseParameterList(std::list<token_t>::iterator *itr, bool global = false, symbol_t* symbol = NULL);
@@ -75,7 +75,7 @@ private:
         void genProgramHeader();
         void genProgramBodyEnd();
         void genProcedureHeader(symbol_t symbol, std::string name);
-        void genProcedureEnd();
+        void genProcedureEnd( type_holder_t return_type);
         unsigned int genProcedureCall(symbol_t symbol, std::string name, std::list<unsigned int> regs);
         void genArgumentsList();
         void genConstant(std::list<token_t>::iterator itr, type_holder_t* parameter_type, bool is_negative = false); // used in parseFactor
