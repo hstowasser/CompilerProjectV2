@@ -1177,7 +1177,7 @@ bool Parser::parseArithOp(std::list<token_t>::iterator *itr, type_holder_t* para
                                 }else{
                                         parameter_type->reg_ct =
                                         this->genArithOp(op, temp_relation.type, temp_relation.reg_ct, temp_arithop.type, temp_arithop.reg_ct);
-                                } 
+                                }
                                 
                         } else {
                                 error_printf( *itr, "Arithmetic Ops (+,-) are only defined for integers and floats \n");
@@ -1222,10 +1222,7 @@ bool Parser::parseRelation(std::list<token_t>::iterator *itr, type_holder_t* par
                 this->next_token(itr); // Move to next token
                 ret = this->parseRelation(itr, &temp_relation);
 
-                if (temp_term.is_array){
-                        error_printf( *itr, "Relation operators are not allowed for arrays \n");
-                        return false;
-                } else if (type_holder_cmp(temp_relation, temp_term)){
+                if (type_holder_cmp(temp_relation, temp_term)){
                         // Both are the same
                         if ((temp_relation.type == T_RW_INTEGER) ||
                                 (temp_relation.type == T_RW_BOOL) ||
@@ -1244,19 +1241,24 @@ bool Parser::parseRelation(std::list<token_t>::iterator *itr, type_holder_t* par
                                         return false;
                                 }
                         } else {
-                                error_printf( *itr, "Relation operators are only defined for INT, BOOL and FLOATS \n");
+                                error_printf( *itr, "Relation operators are only defined for INTEGERS, BOOLS, STRINGS and FLOATS \n");
                                 return false;
                         }                                
-                } else if (temp_relation.is_array != temp_term.is_array){
-                        error_printf( *itr, "Comparisons between array and non-array types are not allowed... yet \n");
-                        return false;
                 }else if ( ((temp_relation.type == T_RW_INTEGER) || (temp_relation.type == T_RW_BOOL)) &&
                         ((temp_term.type == T_RW_INTEGER) || (temp_term.type == T_RW_BOOL))) {
                         // Combinations of int and bool are allowed. Default to bool
-                        parameter_type->reg_ct = 
+
+                        if (temp_relation.is_array || temp_term.is_array){
+                                array_op_params params = this->genSetupArrayOp(&temp_relation, &temp_term, T_RW_BOOL);
+                                unsigned int temp_reg_ct = this->genRelation( op, temp_term.type, temp_term.reg_ct, temp_relation.type, temp_relation.reg_ct);
+                                *parameter_type = this->genEndArrayOp( params, temp_reg_ct);
+                        }else{
+                                parameter_type->reg_ct = 
                                         this->genRelation( op, temp_term.type, temp_term.reg_ct, temp_relation.type, temp_relation.reg_ct);
-                        parameter_type->type = T_RW_BOOL;
+                                parameter_type->type = T_RW_BOOL;
+                        }
                 } else {
+                        // TODO Consider adding support for int/float comparisons
                         error_printf( *itr, "Types do not match \n"); // TODO print types
                         return false;
                 }
