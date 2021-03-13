@@ -43,6 +43,8 @@ Scope::Scope()
     this->writeCode("declare i32 @strcmp(i8*, i8*)", true);
     this->writeCode("declare void @llvm.memcpy.p0i8.p0i8.i64(i8* noalias nocapture writeonly, i8* noalias nocapture readonly, i64, i1 immarg) #1", true);
     this->writeCode("declare float @llvm.sqrt.f32(float %Val)", true);
+    this->writeCode("declare i64 @strlen(i8*)", true);
+    this->writeCode("declare noalias i8* @malloc(i64)", true);
 
     // putBool(bool Value): bool
     symbol_t putBool;
@@ -181,7 +183,11 @@ Scope::Scope()
     this->writeCode("define i8* @GETSTRING0() {", true);
     this->writeCode("	%1 = alloca i8*, align 8", true);
     this->writeCode("	call void (i8*, ...) @scanf(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @.str5, i64 0, i64 0), i8* getelementptr inbounds ([1024 x i8], [1024 x i8]* @buffer, i64 0, i64 0))", true);
-    this->writeCode("	ret i8* getelementptr inbounds ([1024 x i8], [1024 x i8]* @buffer, i64 0, i64 0)", true);
+    this->writeCode("   %2 = call i64 @strlen(i8* getelementptr inbounds ([1024 x i8], [1024 x i8]* @buffer, i64 0, i64 0))", true);
+    this->writeCode("	%3 = call noalias i8* @malloc(i64 %2)", true);
+    this->writeCode("	%4 = add i64 %2, 1", true);
+    this->writeCode("	call void @llvm.memcpy.p0i8.p0i8.i64(i8* align 1 %3, i8* align 16 getelementptr inbounds ([1024 x i8], [1024 x i8]* @buffer, i64 0, i64 0), i64 %4, i1 false)", true);
+    this->writeCode("	ret i8* %3",true);
     this->writeCode("}", true);
     
 }

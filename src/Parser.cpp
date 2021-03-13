@@ -4,13 +4,13 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#if 1
+#if 0
 #define debug_print_call() printf("%s\n", __FUNCTION__)
 #else
 #define debug_print_call()
 #endif
 
-#if 1
+#if 0
 #define debug_print_token(itr) print_token(itr)
 #else
 #define debug_print_token(itr)
