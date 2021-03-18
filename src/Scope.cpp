@@ -32,8 +32,8 @@ Scope::Scope()
     this->writeCode("@.str0 = private unnamed_addr constant [4 x i8] c\"%d\\0A\\00\", align 1", true);
     this->writeCode("@.str1 = private unnamed_addr constant [4 x i8] c\"%f\\0A\\00\", align 1", true);
     this->writeCode("@.str2 = private unnamed_addr constant [4 x i8] c\"%s\\0A\\00\", align 1", true);
-    this->writeCode("@.str3 = private unnamed_addr constant [3 x i8] c\"%d\\00\", align 1", true);
-    this->writeCode("@.str4 = private unnamed_addr constant [3 x i8] c\"%f\\00\", align 1", true);
+    this->writeCode("@.str3 = private unnamed_addr constant [6 x i8] c\"%d%*c\\00\", align 1", true);
+    this->writeCode("@.str4 = private unnamed_addr constant [6 x i8] c\"%f%*c\\00\", align 1", true);
     this->writeCode("@.str5 = private unnamed_addr constant [9 x i8] c\"%[^\\0A]%*c\\00\", align 1", true);
 
     this->writeCode("@buffer = common dso_local global [1024 x i8] zeroinitializer, align 16", true);
@@ -135,7 +135,7 @@ Scope::Scope()
     this->AddGlobalSymbol(getBoolName,getBool);
     this->writeCode("define i8 @GETBOOL0() {", true);
     this->writeCode("	%1 = alloca i32, align 4", true);
-    this->writeCode("	%2 = getelementptr [3 x i8], [3 x i8]* @.str3, i64 0, i64 0", true);
+    this->writeCode("	%2 = getelementptr [6 x i8], [6 x i8]* @.str3, i64 0, i64 0", true);
     this->writeCode("	call void (i8*, ...) @scanf( i8* %2, i32* %1)", true);
     this->writeCode("	%3 = load i32, i32* %1, align 4", true);
     this->writeCode("	%4 = icmp ne i32 %3, 0", true);
@@ -152,7 +152,7 @@ Scope::Scope()
     this->AddGlobalSymbol(getIntegerName,getInteger);
     this->writeCode("define i32 @GETINTEGER0() {", true);
     this->writeCode("	%1 = alloca i32, align 4", true);
-    this->writeCode("	%2 = getelementptr [3 x i8], [3 x i8]* @.str3, i64 0, i64 0", true);
+    this->writeCode("	%2 = getelementptr [6 x i8], [6 x i8]* @.str3, i64 0, i64 0", true);
     this->writeCode("	call void (i8*, ...) @scanf( i8* %2, i32* %1)", true);
     this->writeCode("	%3 = load i32, i32* %1, align 4", true);
     this->writeCode("	ret i32 %3", true);
@@ -167,7 +167,7 @@ Scope::Scope()
     this->AddGlobalSymbol(getFloatName,getFloat);
     this->writeCode("define float @GETFLOAT0() {", true);
     this->writeCode("	%1 = alloca float, align 4", true);
-    this->writeCode("	%2 = getelementptr [3 x i8], [3 x i8]* @.str4, i64 0, i64 0", true);
+    this->writeCode("	%2 = getelementptr [6 x i8], [6 x i8]* @.str4, i64 0, i64 0", true);
     this->writeCode("	call void (i8*, ...) @scanf( i8* %2, float* %1)", true);
     this->writeCode("	%3 = load float, float* %1, align 4", true);
     this->writeCode("	ret float %3", true);
