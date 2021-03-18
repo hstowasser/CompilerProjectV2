@@ -16,6 +16,7 @@ class Parser
 {
 private:
 
+        bool areTypesCompatible(token_type_e type_a, token_type_e type_b);
 
         bool parseProgram(std::list<token_t>::iterator *itr);
         bool parseProgramHeader(std::list<token_t>::iterator *itr);
@@ -86,6 +87,7 @@ private:
         unsigned int genFloatToInt(unsigned int reg);
         unsigned int genBoolToInt(unsigned int reg);
         unsigned int genIntToBool(unsigned int reg);
+        unsigned int genTypeConversion(token_type_e desired_type, type_holder_t parameter_type);
         unsigned int genGEP(type_holder_t parameter_type, unsigned int index_reg, bool global = false);
         unsigned int genGEP_Head(type_holder_t parameter_type,  bool global /*= false*/);
         unsigned int genTerm(token_type_e op, token_type_e type_a, unsigned int reg_a, token_type_e type_b, unsigned int reg_b);

@@ -314,6 +314,34 @@ void Parser::genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_
         
 }
 
+unsigned int Parser::genTypeConversion(token_type_e desired_type, type_holder_t parameter_type)
+{
+        unsigned int reg = parameter_type.reg_ct;
+        switch (desired_type)
+        {
+        case T_RW_BOOL:
+                if (parameter_type.type == T_RW_INTEGER){
+                        reg = this->genIntToBool(parameter_type.reg_ct);
+                }
+                break;
+        case T_RW_INTEGER:
+                if (parameter_type.type == T_RW_FLOAT){
+                        reg = this->genIntToBool(parameter_type.reg_ct);
+                }else if (parameter_type.type == T_RW_BOOL){
+                        reg = this->genBoolToInt(parameter_type.reg_ct);
+                }
+                break;
+        case T_RW_FLOAT:
+                if (parameter_type.type == T_RW_INTEGER){
+                        reg = this->genIntToFloat(parameter_type.reg_ct);
+                }
+                break;
+        default:
+                break;
+        }
+        return reg;
+}
+
 void Parser::genProgramHeader()
 {
         this->scope->writeCode("define i32 @main() {");

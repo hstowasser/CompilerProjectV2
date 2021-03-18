@@ -33,6 +33,29 @@ Parser::~Parser()
 {
 }
 
+bool Parser::areTypesCompatible(token_type_e type_a, token_type_e type_b)
+{
+        bool compatible = false;
+        compatible |= type_a == type_b;
+
+        switch (type_a){
+        case T_RW_BOOL:
+                compatible |= type_b == T_RW_INTEGER;
+                break;
+        case T_RW_INTEGER:
+                compatible |= type_b == T_RW_FLOAT;
+                compatible |= type_b == T_RW_BOOL;
+                break;
+        case T_RW_FLOAT:
+                compatible |= type_b == T_RW_INTEGER;
+                break;
+        default:
+                break;
+                //Strings must be exactly equal
+        }
+        return compatible;
+}
+
 void Parser::next_token(std::list<token_t>::iterator *itr)
 {
         debug_print_token(**itr);
@@ -546,10 +569,20 @@ bool Parser::parseReturnStatement(std::list<token_t>::iterator *itr)
                 return false; // Failed to find procedure type
         }
 
-        if(expr_type.type != procedure_type.type){
-                error_printf( *itr, "Procedure type and return type do not match \n"); // TODO print types
+        if(expr_type.is_array){
+                error_printf( *itr, "Cannot return an array \n");
+                return false;
+        } if(!this->areTypesCompatible(expr_type.type, procedure_type.type)){
+                error_printf( *itr, "Procedure type and return type are not compatible \n"); // TODO print types
                 return false;
         }
+        // Do type conversion if needed
+        expr_type.reg_ct = this->genTypeConversion( procedure_type.type, expr_type); // Does not convert arrays
+
+        // if(expr_type.type != procedure_type.type){
+        //         error_printf( *itr, "Procedure type and return type do not match \n"); // TODO print types
+        //         return false;
+        // }
 
         this->genReturn(procedure_type.type, expr_type.reg_ct);
 
@@ -1370,16 +1403,25 @@ bool Parser::parseArgumentList(std::list<token_t>::iterator *itr, symbol_t proce
                 }
 
                 ret = this->parseExpression(itr, &expr_type);
-                regs->push_back(expr_type.reg_ct);
-
                 if (ret == false){
                         return ret;
                 }
-                if (expr_type.type != procedure_symbol.parameter_type_arr[arg_ct].type){
-                        error_printf( *itr, "Argument %d's type does not match that of procedure call \n", arg_ct+1);
+
+                // if (expr_type.type != procedure_symbol.parameter_type_arr[arg_ct].type){
+                //         error_printf( *itr, "Argument %d's type does not match that of procedure call \n", arg_ct+1);
+                //         return false;
+                // }
+                if(expr_type.is_array != procedure_symbol.parameter_type_arr[arg_ct].is_array){
+                        error_printf( *itr, "Mixing of array and non-array types in procedure calls is not allowed \n");
+                        return false;
+                } if(!this->areTypesCompatible(expr_type.type, procedure_symbol.parameter_type_arr[arg_ct].type)){
+                        error_printf( *itr, "Procedure type and return type are not compatible \n");
                         return false;
                 }
+                // Do type conversion if needed
+                expr_type.reg_ct = this->genTypeConversion( procedure_symbol.parameter_type_arr[arg_ct].type, expr_type); // Does not convert arrays
 
+                regs->push_back(expr_type.reg_ct);
                 arg_ct++;
         } while ((*itr)->type == T_SYM_COMMA);
 
@@ -1402,6 +1444,7 @@ bool Parser::parseTerm(std::list<token_t>::iterator *itr, type_holder_t* paramet
         if (!ret){
                 return false;
         }
+        *parameter_type = temp_factor;
 
         if (((*itr)->type == T_OP_TERM_DIVIDE) ||
                 ((*itr)->type == T_OP_TERM_MULTIPLY))
@@ -1429,8 +1472,6 @@ bool Parser::parseTerm(std::list<token_t>::iterator *itr, type_holder_t* paramet
                         error_printf( *itr, "Types do not match. Terms must both be either integers or floats \n");
                         return false;
                 }
-        }else{
-                *parameter_type = temp_factor;
         }
         
 
