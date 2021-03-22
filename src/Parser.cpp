@@ -4,13 +4,13 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#if 0
+#if 1
 #define debug_print_call() printf("%s\n", __FUNCTION__)
 #else
 #define debug_print_call()
 #endif
 
-#if 0
+#if 1
 #define debug_print_token(itr) print_token(itr)
 #else
 #define debug_print_token(itr)
@@ -1126,6 +1126,9 @@ bool Parser::parseExpression(std::list<token_t>::iterator *itr, type_holder_t* p
         }
         
         ret = this->parseArithOp(itr, &temp_arithop);
+        if (parameter_type != NULL) {
+                *parameter_type = temp_arithop;
+        }
         if (!ret) {
                 return false;
         }
@@ -1143,14 +1146,18 @@ bool Parser::parseExpression(std::list<token_t>::iterator *itr, type_holder_t* p
                         error_printf( *itr, "Bitwise operation NOT is only defined for integers \n");
                         return false;
                 }
+                if (parameter_type != NULL) {
+                        *parameter_type = temp_arithop;
+                }
+                return true; // [not] <arithOp>
         }
 
-        if (((*itr)->type == T_OP_BITW_AND) ||
+        while (((*itr)->type == T_OP_BITW_AND) ||
             ((*itr)->type == T_OP_BITW_OR)) {
                 op = (*itr)->type;
 
                 this->next_token(itr); // Move to next token
-                ret = this->parseExpression(itr, &temp_expression);
+                ret = this->parseArithOp(itr, &temp_expression);
 
                 // Bitwise operations are only valid for integers
                 if ((temp_expression.type == T_RW_INTEGER) &&
@@ -1167,11 +1174,7 @@ bool Parser::parseExpression(std::list<token_t>::iterator *itr, type_holder_t* p
                         error_printf( *itr, "Bitwise operations AND/OR are only defined for integers \n");
                         return false;
                 }
-                
-        } else {
-                if (parameter_type != NULL) {
-                        *parameter_type = temp_arithop;
-                }                        
+                temp_arithop = *parameter_type;
         }
 
         return ret;
@@ -1186,44 +1189,46 @@ bool Parser::parseArithOp(std::list<token_t>::iterator *itr, type_holder_t* para
         token_type_e op;
 
         ret = this->parseRelation(itr, &temp_relation); // TODO test type checking
-        if (ret){
-                if (((*itr)->type == T_OP_ARITH_MINUS) ||
-                    ((*itr)->type == T_OP_ARITH_PLUS))
-                {
-                        op = (*itr)->type;
-                        // Then it's an ArithOp?
-                        this->next_token(itr); // Move to next token
-                        ret = this->parseArithOp(itr, &temp_arithop);
+        if (!ret){
+                return false;
+        }
+        *parameter_type = temp_relation;
 
-                        if ( ((temp_relation.type == T_RW_INTEGER) || (temp_relation.type == T_RW_FLOAT)) &&
-                             ((temp_arithop.type == T_RW_INTEGER) || (temp_arithop.type == T_RW_FLOAT))) {
-                                // Combinations of int and float are allowed
-                                token_type_e result_type;
-                                if (temp_relation.type == T_RW_FLOAT || temp_arithop.type == T_RW_FLOAT){
-                                        parameter_type->type = T_RW_FLOAT; // Default to float
-                                        result_type = T_RW_FLOAT;
-                                }else{
-                                        parameter_type->type = T_RW_INTEGER;
-                                        result_type = T_RW_INTEGER;
-                                }
+        while (((*itr)->type == T_OP_ARITH_MINUS) ||
+                ((*itr)->type == T_OP_ARITH_PLUS))
+        {
+                op = (*itr)->type;
+                // Then it's an ArithOp?
+                this->next_token(itr); // Move to next token
+                ret = this->parseRelation(itr, &temp_arithop);
 
-                                if (temp_relation.is_array || temp_arithop.is_array){
-                                        array_op_params params = this->genSetupArrayOp(&temp_relation, &temp_arithop, result_type);
-                                        unsigned int temp_reg_ct = this->genArithOp(op, temp_relation.type, temp_relation.reg_ct, temp_arithop.type, temp_arithop.reg_ct);
-                                        *parameter_type = this->genEndArrayOp( params, temp_reg_ct);
-                                }else{
-                                        parameter_type->reg_ct =
-                                        this->genArithOp(op, temp_relation.type, temp_relation.reg_ct, temp_arithop.type, temp_arithop.reg_ct);
-                                }
-                                
-                        } else {
-                                error_printf( *itr, "Arithmetic Ops (+,-) are only defined for integers and floats \n");
-                                return false;
+                if ( ((temp_relation.type == T_RW_INTEGER) || (temp_relation.type == T_RW_FLOAT)) &&
+                        ((temp_arithop.type == T_RW_INTEGER) || (temp_arithop.type == T_RW_FLOAT))) {
+                        // Combinations of int and float are allowed
+                        token_type_e result_type;
+                        if (temp_relation.type == T_RW_FLOAT || temp_arithop.type == T_RW_FLOAT){
+                                parameter_type->type = T_RW_FLOAT; // Default to float
+                                result_type = T_RW_FLOAT;
+                        }else{
+                                parameter_type->type = T_RW_INTEGER;
+                                result_type = T_RW_INTEGER;
                         }
-                }else{
-                        *parameter_type = temp_relation;
+
+                        if (temp_relation.is_array || temp_arithop.is_array){
+                                array_op_params params = this->genSetupArrayOp(&temp_relation, &temp_arithop, result_type);
+                                unsigned int temp_reg_ct = this->genArithOp(op, temp_relation.type, temp_relation.reg_ct, temp_arithop.type, temp_arithop.reg_ct);
+                                *parameter_type = this->genEndArrayOp( params, temp_reg_ct);
+                        }else{
+                                parameter_type->reg_ct =
+                                this->genArithOp(op, temp_relation.type, temp_relation.reg_ct, temp_arithop.type, temp_arithop.reg_ct);
+                        }
+                        
+                } else {
+                        error_printf( *itr, "Arithmetic Ops (+,-) are only defined for integers and floats \n");
+                        return false;
                 }
-        }        
+                temp_relation = *parameter_type;
+        }
 
         return ret;
 }
@@ -1241,8 +1246,9 @@ bool Parser::parseRelation(std::list<token_t>::iterator *itr, type_holder_t* par
         if (!ret){
                 return false;
         }
+        *parameter_type = temp_term;
 
-        if (((*itr)->type == T_OP_REL_GREATER) ||
+        while (((*itr)->type == T_OP_REL_GREATER) ||
                 ((*itr)->type == T_OP_REL_LESS) ||
                 ((*itr)->type == T_OP_REL_GREATER_EQUAL) ||
                 ((*itr)->type == T_OP_REL_LESS_EQUAL) ||
@@ -1257,7 +1263,7 @@ bool Parser::parseRelation(std::list<token_t>::iterator *itr, type_holder_t* par
 
                 // Then it's a relation?
                 this->next_token(itr); // Move to next token
-                ret = this->parseRelation(itr, &temp_relation);
+                ret = this->parseTerm(itr, &temp_relation);
 
                 if (type_holder_cmp(temp_relation, temp_term)){
                         // Both are the same
@@ -1299,9 +1305,7 @@ bool Parser::parseRelation(std::list<token_t>::iterator *itr, type_holder_t* par
                         error_printf( *itr, "Types do not match \n"); // TODO print types
                         return false;
                 }
-
-        }else{
-                *parameter_type = temp_term;
+                temp_term = *parameter_type;
         }
 
 
@@ -1432,6 +1436,52 @@ bool Parser::parseArgumentList(std::list<token_t>::iterator *itr, symbol_t proce
         return ret;
 }
 
+// bool Parser::parseTerm(std::list<token_t>::iterator *itr, type_holder_t* parameter_type)
+// {
+//         debug_print_call();
+//         bool ret = false;
+//         type_holder_t temp_factor;
+//         type_holder_t temp_term;
+//         token_type_e op;
+
+//         ret = this->parseFactor(itr, &temp_factor);
+//         if (!ret){
+//                 return false;
+//         }
+//         *parameter_type = temp_factor;
+
+//         if (((*itr)->type == T_OP_TERM_DIVIDE) ||
+//                 ((*itr)->type == T_OP_TERM_MULTIPLY))
+//         {
+//                 op = (*itr)->type;
+//                 // Then it's a term?
+//                 this->next_token(itr); // Move to next token
+//                 ret = this->parseTerm(itr, &temp_term);
+
+//                 if ( (temp_factor.type == T_RW_INTEGER || temp_factor.type == T_RW_FLOAT) &&
+//                      (temp_term.type == T_RW_INTEGER || temp_term.type == T_RW_FLOAT))
+//                 {
+//                         token_type_e result_type = (temp_factor.type == T_RW_FLOAT) || (temp_term.type == T_RW_FLOAT) 
+//                                 ? T_RW_FLOAT : T_RW_INTEGER; // If either is float then the result is float
+
+//                         if (temp_factor.is_array == false && temp_term.is_array == false){
+//                                 parameter_type->reg_ct = this->genTerm( op, temp_factor.type, temp_factor.reg_ct, temp_term.type, temp_term.reg_ct);
+//                         } else {
+//                                 array_op_params params = this->genSetupArrayOp(&temp_factor, &temp_term, result_type);
+//                                 unsigned int temp_reg_ct = this->genTerm( op, temp_factor.type, temp_factor.reg_ct, temp_term.type, temp_term.reg_ct);
+//                                 *parameter_type = this->genEndArrayOp( params, temp_reg_ct);
+//                         }
+                        
+//                 } else {
+//                         error_printf( *itr, "Types do not match. Terms must both be either integers or floats \n");
+//                         return false;
+//                 }
+//         }
+        
+
+//         return ret;
+// }
+
 bool Parser::parseTerm(std::list<token_t>::iterator *itr, type_holder_t* parameter_type)
 {
         debug_print_call();
@@ -1446,13 +1496,13 @@ bool Parser::parseTerm(std::list<token_t>::iterator *itr, type_holder_t* paramet
         }
         *parameter_type = temp_factor;
 
-        if (((*itr)->type == T_OP_TERM_DIVIDE) ||
+        while (((*itr)->type == T_OP_TERM_DIVIDE) ||
                 ((*itr)->type == T_OP_TERM_MULTIPLY))
         {
                 op = (*itr)->type;
                 // Then it's a term?
                 this->next_token(itr); // Move to next token
-                ret = this->parseTerm(itr, &temp_term);
+                ret = this->parseFactor(itr, &temp_term);
 
                 if ( (temp_factor.type == T_RW_INTEGER || temp_factor.type == T_RW_FLOAT) &&
                      (temp_term.type == T_RW_INTEGER || temp_term.type == T_RW_FLOAT))
@@ -1472,9 +1522,8 @@ bool Parser::parseTerm(std::list<token_t>::iterator *itr, type_holder_t* paramet
                         error_printf( *itr, "Types do not match. Terms must both be either integers or floats \n");
                         return false;
                 }
+                temp_factor = *parameter_type;
         }
-        
-
         return ret;
 }
 
