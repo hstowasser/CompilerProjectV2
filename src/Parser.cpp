@@ -799,10 +799,20 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, type_holder
                 std::string name = std::get<0>(tup);
                 symbol_t param_symbol = std::get<1>(tup);
                 symbol.variable_type.reg_ct = param_ct; // Set the reg_ct for it.
+                
+                symbol_t temp_symbol = param_symbol;
 
                 this->genVariableDeclaration( &param_symbol, false);
-                // Store parameter data in local memory
-                this->genStoreReg(param_symbol.variable_type.type, param_ct, param_symbol.variable_type.reg_ct, false);
+
+                if (param_symbol.variable_type.is_array)
+                {
+                        // TODO GenMemcpy
+                        this->genAssignmentStatement(param_symbol.variable_type, temp_symbol.variable_type);
+                } else {
+                        // Store parameter data in local memory
+                        this->genStoreReg(param_symbol.variable_type.type, param_ct, param_symbol.variable_type.reg_ct, false);
+                }
+                
 
                 this->scope->AddSymbol(name, param_symbol);
 
@@ -830,8 +840,8 @@ bool Parser::parseParameterList(std::list<token_t>::iterator *itr, bool global /
                 }
                 ret = this->parseParameter(itr, &temp_parameter_type); // Parameters of a global function are local
                 if (temp_parameter_type.is_array){
-                        error_printf( *itr, "Array parameters types are not supported \n");
-                        return false;
+                        // error_printf( *itr, "Array parameters types are not supported \n");
+                        // return false;
                 }
                 temp_param_list.push_back(temp_parameter_type);
                 symbol->parameter_ct++; // Increment parameterlist counter

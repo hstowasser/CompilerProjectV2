@@ -239,8 +239,6 @@ void Parser::genVariableDeclaration( symbol_t* symbol, bool global)
         }
 }
 
-
-
 void Parser::genAssignmentStatement(type_holder_t dest_type, type_holder_t expr_type)
 {
 
@@ -369,7 +367,12 @@ void Parser::genProcedureHeader(symbol_t symbol, std::string name)
                 if (i != 0){
                         ss << ", ";
                 }
-                ss << get_llvm_type(symbol.parameter_type_arr[i].type) << " %" << symbol.parameter_type_arr[i].reg_ct;
+                if (symbol.parameter_type_arr[i].is_array){
+                        unsigned int len = symbol.parameter_type_arr[i].array_length;
+                        ss << "[" << len << " x " << get_llvm_type(symbol.parameter_type_arr[i].type) << "]* %" <<  symbol.parameter_type_arr[i].reg_ct;
+                } else {
+                        ss << get_llvm_type(symbol.parameter_type_arr[i].type) << " %" << symbol.parameter_type_arr[i].reg_ct;
+                }                
                 
         }
         this->scope->reg_ct_local++; // Not sure why, but there is always an unused reg after parameter list
@@ -470,7 +473,13 @@ unsigned int Parser::genProcedureCall(symbol_t symbol, std::string name, std::li
                 if (i != 0){
                         ss << ", ";
                 }
-                ss << get_llvm_type(symbol.parameter_type_arr[i].type) << " %" << *it;
+                
+                if (symbol.parameter_type_arr[i].is_array){
+                        unsigned int len = symbol.parameter_type_arr[i].array_length;
+                        ss << "[" << len << " x " << get_llvm_type(symbol.parameter_type_arr[i].type) << "]* %" <<  *it;
+                } else {
+                        ss << get_llvm_type(symbol.parameter_type_arr[i].type) << " %" << *it;
+                } 
                 it++;
         }
         ss << ")";
