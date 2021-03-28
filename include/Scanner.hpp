@@ -29,7 +29,7 @@ public:
         Scanner();
         ~Scanner();
 
-        void scanFile(std::string filename, std::list<token_t>* token_list);
+        bool scanFile(std::string filename, std::list<token_t>* token_list);
 
         token_t* scanToken(FileReader *reader);
 };

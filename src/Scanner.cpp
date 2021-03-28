@@ -1,6 +1,10 @@
 #include "Scanner.hpp"
 #include <string.h>
 
+static bool error = false;
+
+#define error_printf(reader, fmt, ...) printf("ERROR: Line %d - " fmt, (reader)->getLineNum(), ##__VA_ARGS__); error = true;
+
 Scanner::Scanner()
 {
 }
@@ -142,7 +146,7 @@ void Scanner::parseIdentifier(FileReader *reader, token_t *token)
         }
 
         if ( i == MAX_IDENTIFIER_LENGTH){
-                // TODO Handle error, max identifier length exceeded
+                error_printf(reader, "Max identifier length exceeded\n");
         }
         return;
 }
@@ -168,7 +172,7 @@ void Scanner::parseDigit(FileReader *reader, token_t *token)
         }
 
         if ( i >= MAX_DIGIT_LENGTH){
-                // TODO Handle error, max digit length exceeded
+                error_printf(reader, "Max digit length exceeded\n");
         }
 
         if (is_float){
@@ -251,7 +255,7 @@ void Scanner::parseSymbol(FileReader *reader, token_t *token)
                         token->type = T_OP_REL_NOT_EQUAL;
                 } else {
                         // ERROR
-                        // error = SCAN_ERROR;
+                        error_printf(reader, "Expected = after !\n");
                         token->type = T_UNKNOWN;
                 }
                 break;
@@ -261,7 +265,7 @@ void Scanner::parseSymbol(FileReader *reader, token_t *token)
                         token->type = T_OP_REL_EQUAL;
                 } else {
                         // ERROR
-                        // error = SCAN_ERROR;
+                        error_printf(reader, "Expected = after =\n");
                         token->type = T_UNKNOWN;
                 }
                 break;
@@ -285,7 +289,7 @@ void Scanner::parseSymbol(FileReader *reader, token_t *token)
                 break;
         default:
                 // Unknown Symbol
-                // error = SCAN_ERROR;
+                error_printf(reader, "INVALID Symbol\n");
                 token->type = T_UNKNOWN;
         }
 
@@ -315,7 +319,7 @@ void Scanner::parseString(FileReader *reader, token_t *token)
 
         
         if ( c == EOF ){
-                // TODO Handle: Unexpected EOF while parsing string
+                error_printf(reader, "Unexpected EOF while parsing string\n");
         } else {
                 // Add string to symbol table
                 token->setValue(str);
@@ -354,10 +358,12 @@ token_t* Scanner::scanToken(FileReader *reader)
         return token;
 }
 
-void Scanner::scanFile(std::string filename, std::list<token_t>* token_list)
+bool Scanner::scanFile(std::string filename, std::list<token_t>* token_list)
 {
         FileReader *reader;
         token_t* token;
+
+        error = false;
 
         reader = new FileReader(filename);
 
@@ -368,4 +374,5 @@ void Scanner::scanFile(std::string filename, std::list<token_t>* token_list)
         } while (token->type != T_EOF);
 
         delete reader;
+        return error;
 }

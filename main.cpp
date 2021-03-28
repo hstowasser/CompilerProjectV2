@@ -39,8 +39,12 @@ int main(int argc, char **argv)
         Parser *parser = new Parser(scope);
         list<token_t> token_list;
 
-        scanner->scanFile(argv[1], &token_list);
+        bool error = scanner->scanFile(argv[1], &token_list);
         delete scanner;
+        if( error ){
+                printf("Fail\n");
+                return -1;
+        }
 
         // list<token_t>::iterator itr;
         // for ( itr = token_list.begin(); itr != token_list.end(); itr++){
