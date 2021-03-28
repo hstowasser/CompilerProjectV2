@@ -4,13 +4,13 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#if 1
+#if 0
 #define debug_print_call() printf("%s\n", __FUNCTION__)
 #else
 #define debug_print_call()
 #endif
 
-#if 1
+#if 0
 #define debug_print_token(itr) print_token(itr)
 #else
 #define debug_print_token(itr)
@@ -83,9 +83,9 @@ bool Parser::AddSymbol_Helper(std::list<token_t>::iterator *itr, bool global, sy
         }
 
         if (global){
-                this->scope->AddGlobalSymbol(*(*itr)->getStringValue(), symbol);
+                this->scope->AddGlobalSymbol(get_string(itr), symbol);
         }else{
-                this->scope->AddSymbol(*(*itr)->getStringValue(), symbol);
+                this->scope->AddSymbol(get_string(itr), symbol);
         }
         return true;
 }
@@ -710,6 +710,7 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, type_holder
         std::string name;
         debug_print_call();
         bool ret = false;
+        std::list<token_t>::iterator itr_identifier;
 
         // check for "procedure"
         if ((*itr)->type == T_RW_PROCEDURE){
@@ -722,6 +723,7 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, type_holder
         if ((*itr)->type == T_IDENTIFIER){
                 symbol.type = ST_PROCEDURE;
                 name = *(*itr)->getStringValue();
+                itr_identifier = *itr;
 
                 this->next_token(itr); // Move to next token
         }else{
@@ -776,15 +778,15 @@ bool Parser::parseProcedureHeader(std::list<token_t>::iterator *itr, type_holder
         
         if (global){
                 symbol._procedure_ct = 0;
-                this->scope->AddGlobalSymbol(name, symbol);
+                ret = AddSymbol_Helper(&itr_identifier, global, symbol);
                 this->scope->PushScope(name);
         }else{
                 symbol._procedure_ct = this->scope->procedure_ct; // Used for code generation
                 this->scope->procedure_ct++;
                 // To allow for recursive calls add procedure symbol to both current and next scope
-                this->scope->AddSymbol(name, symbol);
+                ret = AddSymbol_Helper(&itr_identifier, global, symbol);
                 this->scope->PushScope(name);
-                this->scope->AddSymbol(name, symbol);
+                ret = AddSymbol_Helper(&itr_identifier, global, symbol);
         }
 
         this->genProcedureHeader(symbol, name);
@@ -876,6 +878,7 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
         bool ret = false;
         std::string name;
         symbol_t symbol;
+        std::list<token_t>::iterator itr_identifier;
 
         // check for "variable"
         if ((*itr)->type == T_RW_VARIABLE){
@@ -888,6 +891,7 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
         if ((*itr)->type == T_IDENTIFIER){
                 symbol.type = ST_VARIABLE;
                 name = *(*itr)->getStringValue();
+                itr_identifier = *itr;
 
                 this->next_token(itr); // Move to next token
         }else{
@@ -939,11 +943,7 @@ bool Parser::parseVariableDeclaration(std::list<token_t>::iterator *itr, bool gl
 
         this->genVariableDeclaration( &symbol, global); // Generate code
 
-        if (global){
-                this->scope->AddGlobalSymbol(name, symbol);
-        }else{
-                this->scope->AddSymbol(name, symbol);
-        }
+        ret = this->AddSymbol_Helper( &itr_identifier ,global , symbol);
 
         return ret;
 }
